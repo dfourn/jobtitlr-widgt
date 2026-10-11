@@ -1,4 +1,12 @@
-import { averageOf, roundScore, shareOf, starFills, totalOf, type StarFills } from './rating';
+import {
+  averageOf,
+  defaultLabelFor,
+  roundScore,
+  shareOf,
+  starFills,
+  totalOf,
+  type StarFills,
+} from './rating';
 import type { RatingCounts } from './types';
 
 /** The data in the brief's reference design (B2.1). */
@@ -103,5 +111,23 @@ describe('shareOf', () => {
 
   it('AC-2.2 returns 0, not NaN, when there are no reviews', () => {
     expect(shareOf(0, 0)).toBe(0);
+  });
+});
+
+describe('defaultLabelFor', () => {
+  it.each<[number, string]>([
+    [5, 'Excellent'],
+    [4.6, 'Excellent'],
+    [4.5, 'Excellent'],
+    [4.49, 'Very good'],
+    [4, 'Very good'],
+    [3.99, 'Good'],
+    [3, 'Good'],
+    [2.99, 'Fair'],
+    [2, 'Fair'],
+    [1.99, 'Poor'],
+    [1, 'Poor'],
+  ])('AC-2.1 labels a score of %s as "%s" (A-W6 bands)', (score, expected) => {
+    expect(defaultLabelFor(score)).toBe(expected);
   });
 });

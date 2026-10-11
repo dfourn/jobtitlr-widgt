@@ -58,3 +58,13 @@ export function starFills(score: number): StarFills {
 export function shareOf(count: number, total: number): number {
   return total === 0 ? 0 : count / total;
 }
+
+/**
+ * The default word for a score (A-W6): >= 4.5 Excellent, >= 4.0 Very good,
+ * >= 3.0 Good, >= 2.0 Fair, otherwise Poor. Sentence case; any uppercase is CSS (A-W10).
+ * @param score - A rounded score, so the word agrees with the number shown.
+ */
+export function defaultLabelFor(score: number): string {
+  void score;
+  throw new Error('not implemented');
+}
