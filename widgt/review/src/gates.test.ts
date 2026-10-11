@@ -112,6 +112,21 @@ describe('AC-L3 contract lock (G4)', () => {
     expect(gate.detail).toContain(detail);
   });
 
+  it.each(['review/contract/.DS_Store', 'review/reference/Thumbs.db', 'review/src/signals/.DS_Store'])(
+    'AC-L3 ignores the OS junk file %s inside a locked folder',
+    (junk) => {
+      const gate = checkContractLock(memoryFs(lockedTree({ [junk]: new Uint8Array([0, 0, 0, 1]) })));
+      expect(gate).toMatchObject({ passed: true });
+      expect(Object.keys(computeLock(memoryFs({ ...tree, [junk]: 'junk' })))).not.toContain(junk);
+    },
+  );
+
+  it('AC-L3 still locks other dotfiles inside a locked folder', () => {
+    const gate = checkContractLock(memoryFs(lockedTree({ 'review/contract/.hidden.ts': 'export {};' })));
+    expect(gate.passed).toBe(false);
+    expect(gate.detail).toContain('added: review/contract/.hidden.ts');
+  });
+
   it('AC-L3 fails with a clear message when the lock file is missing', () => {
     const gate = checkContractLock(memoryFs(tree));
     expect(gate.passed).toBe(false);
