@@ -56,7 +56,5 @@ export function starFills(score: number): StarFills {
  * @returns A fraction in [0, 1]; 0 when there are no reviews (never NaN).
  */
 export function shareOf(count: number, total: number): number {
-  void count;
-  void total;
-  throw new Error('not implemented');
+  return total === 0 ? 0 : count / total;
 }
