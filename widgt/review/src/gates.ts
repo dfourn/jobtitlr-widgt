@@ -12,13 +12,32 @@ export interface LockScope {
 }
 
 /**
- * Spec 03 G4 scope. `review/playwright.config.ts` is added to the spec's list
- * because it decides which contract tests run: editing its `grep` or
- * `testIgnore` would skip tests without touching a spec file.
+ * Spec 03 G4 scope: everything that decides what the review measures.
+ * - `review/contract`, `review/reference` and `review/rubric.json`: the tests,
+ *   the target image and the weights.
+ * - `review/playwright.config.ts`: its `grep` or `testIgnore` could skip
+ *   contract tests without touching a spec file.
+ * - `review/src`: the gates and signals themselves, snapshots included.
+ * - The ESLint, TypeScript and Vite configs: G1, G2 and the unit tests run
+ *   under them, so loosening one would hide failures.
+ * - `package.json` and `package-lock.json`: they define the scripts the gates
+ *   run and the tool versions.
+ * There are no globs, so each file is listed.
  */
 export const DEFAULT_LOCK_SCOPE: LockScope = {
-  dirs: ['review/contract', 'review/reference'],
-  files: ['review/rubric.json', 'review/playwright.config.ts'],
+  dirs: ['review/contract', 'review/reference', 'review/src'],
+  files: [
+    'review/rubric.json',
+    'review/playwright.config.ts',
+    'review/tsconfig.json',
+    'eslint.config.js',
+    'tsconfig.json',
+    'tsconfig.app.json',
+    'tsconfig.node.json',
+    'vite.config.ts',
+    'package.json',
+    'package-lock.json',
+  ],
 };
 
 export const DEFAULT_LOCK_FILE = 'review/contract.lock';

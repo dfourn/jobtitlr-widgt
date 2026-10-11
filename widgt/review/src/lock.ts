@@ -1,8 +1,7 @@
 /**
- * `npm run review:lock`: (re)writes review/contract.lock from the files under
- * review/contract/, review/reference/, review/rubric.json and
- * review/playwright.config.ts. Run by a human after changing the contract,
- * never by the generator: it is what G4 checks against.
+ * `npm run review:lock`: (re)writes review/contract.lock from the files in
+ * `DEFAULT_LOCK_SCOPE` (gates.ts). Run by a human after changing anything in
+ * that scope, never by the generator: it is what G4 checks against.
  */
 import { writeFileSync } from 'node:fs';
 import { abs, WIDGT_ROOT } from './config';
