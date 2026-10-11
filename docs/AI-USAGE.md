@@ -12,9 +12,13 @@ This project was built with help from Claude (Anthropic), working in Cowork with
 |---|---|---|---|
 | 2026-10-11 | Research: how real systems standardise job titles (ESCO, O*NET, UK SOC 2020, LinkedIn's approach) and testing techniques | Claude subagent | Summary in `docs/research/title-standardisation.md` |
 | 2026-10-11 | Research: designing a self-reviewing AI UI loop | Claude subagent | Summary in `docs/research/self-reviewing-ui-loop.md` |
-
 | 2026-10-11 | Transcribed the brief, measured the reference image (colours, bar proportions), cropped the logo placeholder | Claude (Cowork) | Measurements in `docs/brief/README.md` |
 | 2026-10-11 | Drafted the assumptions log from my decisions | Claude (Cowork) | I set the framing and approved A-W1 (interactions) and A-W2 (logo placeholder) |
+| 2026-10-11 | Wrote specs 02 (widget) and 03 (review loop), and ADR 0001 (styling) | Claude (Cowork) | I reviewed them. The open questions are tracked in the plan |
+| 2026-10-11 | Built the widget's domain logic test-first (`feat/widgt-domain`) | Claude subagent, in its own git worktree | 9 red/green cycles. TDD caught a floating-point bug in the partial star fill |
+| 2026-10-11 | Wrote 58 Playwright contract tests from spec 02 before any component existed (`feat/widgt-contract`) | Claude subagent, in its own worktree | Checked against a throwaway implementation and 6 deliberate bugs before they were locked |
+| 2026-10-11 | Built the review harness and loop runner from spec 03 (`feat/widgt-review`) | Claude subagent, in its own worktree | One commit marked green still had a failing test, because piping the run through `grep` hid the exit code. The next commit fixes it |
+| 2026-10-11 | Wrote the Claude Code plan (`prompts/claude-code-plan.md`). An independent subagent reviewed it, and the review's findings were applied | Claude (Cowork) | I asked for the plan → implement workflow with review checkpoints |
 
 ## How to spot AI-assisted commits
 Every commit made with AI help ends with a `Co-Authored-By: Claude ...` trailer.

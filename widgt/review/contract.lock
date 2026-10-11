@@ -1,0 +1,13 @@
+{
+  "review/contract/README.md": "20cea23290520f7e82d4e7a957e923e05788ff525b8a627d4df258de59506d30",
+  "review/contract/accessibility.spec.ts": "af134d36becd4006c10bc1cc4a6f0b0c5389377835713d69d336a22298f80afa",
+  "review/contract/empty.spec.ts": "a92257cf83ed8c07757a0bf5c62cc8602d50aa014321a1e3053988bc872a4d9e",
+  "review/contract/helpers.ts": "05fcd96463b52f7f13d668e1061651db94fa5a787d15c16a04b7cb75e34bef5c",
+  "review/contract/interactions.spec.ts": "09353311ae4645a5f118d5bc7f963d0bde3ec1b5965fd9922f1355443ab3c22f",
+  "review/contract/rendering.spec.ts": "a40158e595f7cbc6b3ee21dfa65fa1276ce71611a3deeb889a331f646f139c0d",
+  "review/contract/responsive.spec.ts": "6273b81a3efca6ff7191accc4815cf55fedaac5aae833bb6ff93ca01e72765db",
+  "review/contract/visual.spec.ts": "7c9613e4b77de57d3d66cb097889f5db4d9e43fa65bfbe8d85a5a9748815502e",
+  "review/playwright.config.ts": "6c929318063b23e34a94944d16d6938641b53fbe781a06a3c61d1c465acbafdf",
+  "review/reference/widget-reference.png": "e60808322209b12a63c16625f10eaee27ff6416420575b29d1b9fc2527be24f2",
+  "review/rubric.json": "9b0c47cb52eaa343a819cb54afa8ba353b07bb3a01c1dad22a5e4e45b96b33bf"
+}
