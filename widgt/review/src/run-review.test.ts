@@ -16,8 +16,11 @@ function whiteImage(size: number) {
   return { width: size, height: size, data: new Uint8Array(size * size * 4).fill(255) };
 }
 
-/** Plays the other tools: Vitest writes its JSON, the contract tests write theirs and a screenshot. */
-function fakeTools(root: string, calls: string[]): CommandRunner {
+/**
+ * Plays the other tools: Vitest writes its JSON, the contract tests write theirs and a screenshot.
+ * With `rendered`, the AC-1.1 and AC-1.2 contract tests pass (the widget-presence precondition).
+ */
+function fakeTools(root: string, calls: string[], rendered: boolean): CommandRunner {
   return {
     run: (command, args, options) => {
       calls.push([command, ...args].join(' '));
@@ -46,6 +49,8 @@ function fakeTools(root: string, calls: string[]): CommandRunner {
                 title: 'widget.spec.ts',
                 file: 'widget.spec.ts',
                 specs: [
+                  { title: 'AC-1.1 shows the label', file: 'widget.spec.ts', line: 1, tests: [{ status: rendered ? 'expected' : 'unexpected', results: [] }] },
+                  { title: 'AC-1.2 five rows', file: 'widget.spec.ts', line: 2, tests: [{ status: 'expected', results: [] }] },
                   { title: 'AC-4.3 clicking the selected row clears it', file: 'widget.spec.ts', line: 3, tests: [{ status: 'unexpected', results: [{ error: { message: 'Expected "false"' } }] }] },
                   { title: 'AC-5.2 no overflow at 320', file: 'widget.spec.ts', line: 8, tests: [{ status: 'expected', results: [] }] },
                 ],
@@ -77,10 +82,10 @@ describe('AC-L1 runReview()', () => {
     rmSync(base, { recursive: true, force: true });
   });
 
-  async function review(): Promise<{ report: ReviewReport; calls: string[] }> {
+  async function review(rendered = true): Promise<{ report: ReviewReport; calls: string[] }> {
     const calls: string[] = [];
     const report = await runReview(
-      { root, fs: nodeFs(root), runner: fakeTools(root, calls), judge: new NoJudge(), now: () => new Date('2026-10-11T12:00:00Z'), log: () => undefined },
+      { root, fs: nodeFs(root), runner: fakeTools(root, calls, rendered), judge: new NoJudge(), now: () => new Date('2026-10-11T12:00:00Z'), log: () => undefined },
       { paths: defaultPaths(), iteration: null, baselineReport: 'review/runs/latest/report.json' },
     );
     return { report, calls };
@@ -104,15 +109,25 @@ describe('AC-L1 runReview()', () => {
     expect(existsSync(join(latest, 'diff.png'))).toBe(true);
     expect(JSON.parse(readFileSync(join(latest, 'report.json'), 'utf8'))).toEqual(report);
     expect(report.gatesPassed).toBe(true);
-    expect(report.signals.contract.value).toBe(50);
+    expect(report.signals.contract.value).toBe(75);
     expect(report.signals.unit.value).toBe(75);
     expect(report.signals.responsive.value).toBe(100);
     expect(report.signals.visual.value).toBe(100);
     expect(report.signals.a11y).toMatchObject({ value: 0, status: 'ok', detail: '0: no axe results found in review/runs/latest/axe' });
     expect(report.signals.judge.status).toBe('off');
-    // (50*25 + 75*15 + 0*20 + 100*15 + 100*10) / 85
-    expect(report.total).toBe(57.4);
+    // (75*25 + 75*15 + 0*20 + 100*15 + 100*10) / 85
+    expect(report.total).toBe(64.7);
     expect(report.failures.map((f) => f.acId)).toEqual(['AC-4.3']);
+  });
+
+  it('AC-L8 scores a11y, responsive and visual 0 with the reason when the widget is not rendered', async () => {
+    const { report } = await review(false);
+    const reason = '0: the widget is not rendered (AC-1.1/AC-1.2 contract tests failing)';
+    expect(report.signals.a11y).toMatchObject({ value: 0, status: 'ok', detail: reason });
+    expect(report.signals.responsive).toMatchObject({ value: 0, status: 'ok', detail: reason });
+    expect(report.signals.visual).toMatchObject({ value: 0, status: 'ok', detail: reason });
+    expect(report.signals.contract.value).toBe(50);
+    expect(report.signals.unit.value).toBe(75);
   });
 
   it('AC-L1 fails G6 when the test count drops below the previous run', async () => {
