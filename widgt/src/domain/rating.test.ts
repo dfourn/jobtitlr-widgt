@@ -75,6 +75,16 @@ describe('starFills', () => {
     expect(starFills(score)).toEqual(expected);
   });
 
+  it.each<[number, StarFills]>([
+    [4.6, [1, 1, 1, 1, 0.6]],
+    [4.7, [1, 1, 1, 1, 0.7]],
+    [3.3, [1, 1, 1, 0.3, 0]],
+    [2.9, [1, 1, 0.9, 0, 0]],
+    [1.1, [1, 0.1, 0, 0, 0]],
+  ])('AC-1.4 fills the partial star to the exact tenth for a score of %s', (score, expected) => {
+    expect(starFills(score)).toEqual(expected);
+  });
+
   it('AC-2.2 fills no stars for a score of 0 (no reviews)', () => {
     expect(starFills(0)).toEqual([0, 0, 0, 0, 0]);
   });
