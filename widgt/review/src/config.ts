@@ -20,7 +20,7 @@ export interface ReviewPaths {
   /** Folder of `<state>.json` axe results, one per state, written by the AC-3.6 contract tests. */
   readonly axeDir: string;
   readonly screenshotsDir: string;
-  /** The `?visual=1` screenshot at 401px, compared with the reference. */
+  /** The widget alone in `?visual=1` (360px wrapper), compared with the reference card. */
   readonly visualScreenshot: string;
   readonly reference: string;
   readonly diff: string;
@@ -46,7 +46,7 @@ export function defaultPaths(latestDir = 'review/runs/latest'): ReviewPaths {
     vitestResults: `${latestDir}/vitest-results.json`,
     axeDir: `${latestDir}/axe`,
     screenshotsDir: `${latestDir}/screenshots`,
-    visualScreenshot: `${latestDir}/screenshots/visual-401.png`,
+    visualScreenshot: `${latestDir}/screenshots/visual-widget.png`,
     reference: 'review/reference/widget-reference.png',
     diff: `${latestDir}/diff.png`,
     lockFile: DEFAULT_LOCK_FILE,

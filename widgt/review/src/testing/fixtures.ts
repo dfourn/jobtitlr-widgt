@@ -26,7 +26,7 @@ export const sampleReport: ReviewReport = {
     unit: { value: 70, weight: 15, effectiveWeight: 17.65, contribution: 12.35, status: 'ok', detail: '40/40 unit tests passed; AC coverage 40% (14/34)' },
     a11y: { value: 85, weight: 20, effectiveWeight: 23.53, contribution: 20, status: 'ok', detail: 'axe: 0 critical, 1 serious, 0 moderate, 0 minor' },
     responsive: { value: 50, weight: 15, effectiveWeight: 17.65, contribution: 8.82, status: 'ok', detail: '2/4 AC-5 contract tests passed' },
-    visual: { value: null, weight: 10, effectiveWeight: 11.76, contribution: 0, status: 'missing', detail: 'screenshot not found: review/runs/latest/screenshots/visual-401.png' },
+    visual: { value: null, weight: 10, effectiveWeight: 11.76, contribution: 0, status: 'missing', detail: 'screenshot not found: review/runs/latest/screenshots/visual-widget.png' },
     judge: { value: null, weight: 15, effectiveWeight: 0, contribution: 0, status: 'off', detail: 'judge off; weight redistributed' },
   },
   missing: ['visual'],

@@ -13,6 +13,37 @@ export interface RgbaImage {
 
 const WHITE = [255, 255, 255, 255] as const;
 
+/** A rectangle in pixels. */
+export interface Box {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
+ * The widget card inside the reference PNG (401x443): its #d4d4d4 border runs
+ * from x 20 to 379 and y 16 to 420. The widget screenshot is compared with
+ * this crop (AC-L10).
+ */
+export const REFERENCE_CARD: Box = { x: 20, y: 16, width: 360, height: 405 };
+
+/** Copies `box` out of `image`. Throws a RangeError when the box does not fit. */
+export function crop(image: RgbaImage, box: Box, name = 'the image'): RgbaImage {
+  if (box.x < 0 || box.y < 0 || box.x + box.width > image.width || box.y + box.height > image.height) {
+    throw new RangeError(
+      `${name} (${String(image.width)}x${String(image.height)}) does not contain the card box ` +
+        `${String(box.width)}x${String(box.height)} at (${String(box.x)}, ${String(box.y)})`,
+    );
+  }
+  const data = new Uint8Array(box.width * box.height * 4);
+  for (let y = 0; y < box.height; y += 1) {
+    const start = ((box.y + y) * image.width + box.x) * 4;
+    data.set(image.data.subarray(start, start + box.width * 4), y * box.width * 4);
+  }
+  return { width: box.width, height: box.height, data };
+}
+
 /**
  * Crops and/or pads `image` to `width` x `height`, anchored top-left, padding
  * with white (the `?visual=1` page background). Returns a note describing the
@@ -138,8 +169,9 @@ export interface VisualSignal {
 }
 
 /**
- * The visual signal: compares the 401px screenshot with the reference,
- * writes `diff.png`, and maps similarity onto 0-100. Missing or unreadable
+ * The visual signal (AC-L10): compares the widget screenshot with the
+ * reference cropped to {@link REFERENCE_CARD} on foreground pixels, writes the
+ * card's `diff.png`, and maps similarity onto 0-100. Missing or unreadable
  * images produce `null` with a reason instead of throwing.
  */
 export function collectVisual(
@@ -154,7 +186,8 @@ export function collectVisual(
     return { value: null, similarity: null, detail: `screenshot not found: ${show(paths.screenshot)}`, notes: [] };
   }
   try {
-    const result = compareImages(readPng(paths.screenshot), readPng(paths.reference));
+    const card = crop(readPng(paths.reference), REFERENCE_CARD, 'the reference');
+    const result = compareImages(readPng(paths.screenshot), card);
     writePng(paths.diff, result.diff);
     return {
       value: visualScore(result.similarity),
