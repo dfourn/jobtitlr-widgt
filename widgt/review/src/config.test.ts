@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { abs, SCREENSHOT_NAMES, WIDGT_ROOT } from './config';
+import { abs, defaultPaths, SCREENSHOT_NAMES, WIDGT_ROOT } from './config';
 
 const source = (path: string): string => readFileSync(abs(WIDGT_ROOT, path), 'utf8');
 
@@ -26,5 +26,11 @@ describe('AC-L1 screenshot names', () => {
     const written = writtenScreenshots();
     expect(written).toContain('visual-401');
     expect(new Set(SCREENSHOT_NAMES)).toEqual(new Set([...written, 'visual-widget']));
+  });
+});
+
+describe('AC-L10 visual screenshot', () => {
+  it('AC-L10 the visual signal reads the widget-only screenshot', () => {
+    expect(defaultPaths().visualScreenshot).toBe('review/runs/latest/screenshots/visual-widget.png');
   });
 });

@@ -12,12 +12,12 @@ import type { ReviewReport } from './report';
 import { runReview } from './run-review';
 import { writePng } from './signals/visual';
 
-function whiteImage(size: number) {
-  return { width: size, height: size, data: new Uint8Array(size * size * 4).fill(255) };
+function whiteImage(width: number, height: number) {
+  return { width, height, data: new Uint8Array(width * height * 4).fill(255) };
 }
 
 /**
- * Plays the other tools: Vitest writes its JSON, the contract tests write theirs and a screenshot.
+ * Plays the other tools: Vitest writes its JSON, the contract tests write theirs and the widget screenshot.
  * With `rendered`, the AC-1.1 and AC-1.2 contract tests pass (the widget-presence precondition).
  */
 function fakeTools(root: string, calls: string[], rendered: boolean): CommandRunner {
@@ -58,7 +58,7 @@ function fakeTools(root: string, calls: string[], rendered: boolean): CommandRun
             ],
           }),
         );
-        writePng(join(runDir, 'screenshots', 'visual-401.png'), whiteImage(8));
+        writePng(join(runDir, 'screenshots', 'visual-widget.png'), whiteImage(360, 405));
       }
       return Promise.resolve({ code: 0, stdout: '', stderr: '' });
     },
@@ -74,7 +74,7 @@ describe('AC-L1 runReview()', () => {
     mkdirSync(join(base, 'docs', 'specs'), { recursive: true });
     writeFileSync(join(base, 'docs', 'specs', '02-widgt.md'), '- **AC-1.1** label\n- **AC-1.2** rows\n');
     mkdirSync(join(root, 'src', 'domain'), { recursive: true });
-    writePng(join(root, 'review', 'reference', 'widget-reference.png'), whiteImage(8));
+    writePng(join(root, 'review', 'reference', 'widget-reference.png'), whiteImage(401, 443));
     writeFileSync(join(root, 'review', 'contract.lock'), serialiseLock(computeLock(nodeFs(root))));
   });
   afterEach(() => {

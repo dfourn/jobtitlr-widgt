@@ -4,8 +4,9 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import pixelmatch from 'pixelmatch';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { blank, paint, shifted, stripes } from '../testing/images';
-import { collectVisual, compareImages, fitToSize, readPng, writePng, type RgbaImage } from './visual';
+import { abs, WIDGT_ROOT } from '../config';
+import { blank, cropped, paint, pixel, shifted, stripes } from '../testing/images';
+import { collectVisual, compareImages, fitToSize, readPng, REFERENCE_CARD, writePng, type RgbaImage } from './visual';
 
 /** A solid-colour image, optionally with a black block in the top-left corner. */
 function image(width: number, height: number, rgb: readonly [number, number, number], block = 0): RgbaImage {
@@ -45,33 +46,34 @@ describe('AC-L1 visual similarity', () => {
   });
 
   it('AC-L1 compares PNG files, writes diff.png and maps similarity onto 0-100', () => {
-    const screenshot = join(dir, 'visual-401.png');
+    const screenshot = join(dir, 'visual-widget.png');
     const reference = join(dir, 'reference.png');
     const diff = join(dir, 'out', 'diff.png');
-    writePng(screenshot, paint(blank(20, 20), 0, 0, 10, 8)); // 20 of the 100 foreground pixels differ -> 0.80
-    writePng(reference, paint(blank(20, 20), 0, 0, 10, 10));
+    // 20 of the 100 foreground pixels differ -> 0.80
+    writePng(screenshot, paint(blank(360, 405), 100, 100, 10, 8));
+    writePng(reference, paint(blank(401, 443), 120, 116, 10, 10)); // the card starts at (20, 16)
     const signal = collectVisual({ screenshot, reference, diff });
     expect(signal.similarity).toBeCloseTo(0.8, 6);
     expect(signal.value).toBe(87.5);
     expect(signal.detail).toBe('foreground similarity 80.0% (20 of 100 foreground pixels differ)');
     expect(existsSync(diff)).toBe(true);
-    expect(readPng(diff).width).toBe(20);
+    expect(readPng(diff).width).toBe(360);
   });
 
   it('AC-L1 reports a size mismatch in the notes', () => {
-    const screenshot = join(dir, 'visual-401.png');
+    const screenshot = join(dir, 'visual-widget.png');
     const reference = join(dir, 'reference.png');
-    writePng(screenshot, image(8, 12, white));
-    writePng(reference, image(10, 10, white));
+    writePng(screenshot, blank(350, 420));
+    writePng(reference, blank(401, 443));
     const signal = collectVisual({ screenshot, reference, diff: join(dir, 'diff.png') });
-    expect(signal.notes).toEqual(['screenshot 8x12 cropped and padded to the reference size 10x10']);
+    expect(signal.notes).toEqual(['screenshot 350x420 cropped and padded to the reference size 360x405']);
   });
 
   it.each([
     { missing: 'screenshot', detail: 'screenshot not found' },
     { missing: 'reference', detail: 'reference not found' },
   ])('AC-L1 reports a missing $missing instead of throwing', ({ missing, detail }) => {
-    const screenshot = join(dir, 'visual-401.png');
+    const screenshot = join(dir, 'visual-widget.png');
     const reference = join(dir, 'reference.png');
     if (missing !== 'screenshot') writePng(screenshot, image(2, 2, white));
     if (missing !== 'reference') writePng(reference, image(2, 2, white));
@@ -160,5 +162,62 @@ describe('AC-L10 foreground similarity', () => {
       const lower = shifted(stripes(40, 140, 100), 0, 24);
       expect(compareImages(lower, stripes(40, 100)).similarity).toBeCloseTo(0.76, 6);
     });
+  });
+});
+
+describe('AC-L10 the reference card', () => {
+  const realReference = readPng(abs(WIDGT_ROOT, 'review/reference/widget-reference.png'));
+  const border = [212, 212, 212, 255];
+  const background = [255, 255, 255, 255];
+  let dir = '';
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'widgt-card-'));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('AC-L10 REFERENCE_CARD sits on the card border of the real reference PNG', () => {
+    expect(REFERENCE_CARD).toEqual({ x: 20, y: 16, width: 360, height: 405 });
+    expect([realReference.width, realReference.height]).toEqual([401, 443]);
+    const { x, y, width, height } = REFERENCE_CARD;
+    const right = x + width - 1;
+    const bottom = y + height - 1;
+    expect(pixel(realReference, x - 1, 200)).toEqual(background);
+    expect(pixel(realReference, x, 200)).toEqual(border);
+    expect(pixel(realReference, right, 200)).toEqual(border);
+    expect(pixel(realReference, right + 1, 200)).toEqual(background);
+    expect(pixel(realReference, 200, y - 1)).toEqual(background);
+    expect(pixel(realReference, 200, y)).toEqual(border);
+    expect(pixel(realReference, 200, bottom)).toEqual(border);
+    expect(pixel(realReference, 200, bottom + 1)).toEqual(background);
+  });
+
+  it('AC-L10 compares the widget screenshot with the reference cropped to the card', () => {
+    const screenshot = join(dir, 'visual-widget.png');
+    const diff = join(dir, 'diff.png');
+    writePng(screenshot, cropped(realReference, 20, 16, 360, 405));
+    const signal = collectVisual({ screenshot, reference: abs(WIDGT_ROOT, 'review/reference/widget-reference.png'), diff });
+    expect(signal).toMatchObject({ similarity: 1, value: 100, notes: [] });
+    expect([readPng(diff).width, readPng(diff).height]).toEqual([360, 405]);
+  });
+
+  it('AC-L10 an all-white widget scores 0 against a card drawn without anti-aliasing', () => {
+    const screenshot = join(dir, 'visual-widget.png');
+    const reference = join(dir, 'reference.png');
+    const card = paint(blank(401, 443, [212, 212, 212]), 21, 17, 358, 403, [255, 255, 255]);
+    writePng(reference, paint(card, 120, 60, 160, 20));
+    writePng(screenshot, blank(360, 405));
+    expect(collectVisual({ screenshot, reference, diff: join(dir, 'diff.png') })).toMatchObject({ similarity: 0, value: 0 });
+  });
+
+  it('AC-L10 reports a reference that does not contain the card instead of throwing', () => {
+    const screenshot = join(dir, 'visual-widget.png');
+    const reference = join(dir, 'reference.png');
+    writePng(screenshot, blank(360, 405));
+    writePng(reference, blank(100, 100));
+    const signal = collectVisual({ screenshot, reference, diff: join(dir, 'diff.png') });
+    expect(signal.value).toBeNull();
+    expect(signal.detail).toBe('could not compare images: the reference (100x100) does not contain the card box 360x405 at (20, 16)');
   });
 });
