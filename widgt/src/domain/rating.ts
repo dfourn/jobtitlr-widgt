@@ -45,8 +45,12 @@ export function starFills(score: number): StarFills {
   // Work in whole tenths: 4.6 - 4 is 0.5999999999999996 in floating point,
   // but 46 - 40 = 6 is exact, and 6 / 10 is the double closest to 0.6.
   const tenths = Math.round(score * 10);
-  const fill = (star: number): number => Math.min(10, Math.max(0, tenths - (star - 1) * 10)) / 10;
+  const fill = (star: StarRating): number => clamp(tenths - (star - 1) * 10, 0, 10) / 10;
   return [fill(1), fill(2), fill(3), fill(4), fill(5)];
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
 
 /**
@@ -59,14 +63,8 @@ export function shareOf(count: number, total: number): number {
   return total === 0 ? 0 : count / total;
 }
 
-/**
- * The default word for a score (A-W6): >= 4.5 Excellent, >= 4.0 Very good,
- * >= 3.0 Good, >= 2.0 Fair, otherwise Poor. Sentence case; any uppercase is CSS (A-W10).
- * @param score - A rounded score, so the word agrees with the number shown.
- */
-export function defaultLabelFor(score: number): string {
-  return LABEL_BANDS.find((band) => score >= band.min)?.label ?? 'Poor';
-}
+/** Maps a rounded score to the word shown above the stars (AC-2.4: replaceable). */
+export type LabelFor = (score: number) => string;
 
 /** A-W6 bands, highest first. Placeholders until product confirms Feefo's real bands. */
 const LABEL_BANDS: readonly { readonly min: number; readonly label: string }[] = [
@@ -75,6 +73,14 @@ const LABEL_BANDS: readonly { readonly min: number; readonly label: string }[] =
   { min: 3, label: 'Good' },
   { min: 2, label: 'Fair' },
 ];
+
+/**
+ * The default word for a score (A-W6): >= 4.5 Excellent, >= 4.0 Very good,
+ * >= 3.0 Good, >= 2.0 Fair, otherwise Poor. Sentence case; any uppercase is CSS (A-W10).
+ * @param score - A rounded score, so the word agrees with the number shown.
+ */
+export const defaultLabelFor: LabelFor = (score) =>
+  LABEL_BANDS.find((band) => score >= band.min)?.label ?? 'Poor';
 
 /**
  * Checks counts that may come from untyped input (JSON, props from JS callers) and fails fast.
@@ -89,7 +95,7 @@ export function validateCounts(input: unknown): RatingCounts {
   }
   const fields = input as Readonly<Record<string, unknown>>;
   const countFor = (star: StarRating): number => {
-    const stars = `${star} ${star === 1 ? 'star' : 'stars'}`;
+    const stars = starsText(star);
     if (!Object.hasOwn(fields, star)) {
       throw new RangeError(`The count for ${stars} is missing`);
     }
@@ -101,10 +107,21 @@ export function validateCounts(input: unknown): RatingCounts {
     }
     return value;
   };
-  return Object.freeze({ 5: countFor(5), 4: countFor(4), 3: countFor(3), 2: countFor(2), 1: countFor(1) });
+  return Object.freeze({
+    5: countFor(5),
+    4: countFor(4),
+    3: countFor(3),
+    2: countFor(2),
+    1: countFor(1),
+  });
 }
 
-/** Renders a bad value for an error message: numbers as-is (NaN, -1), everything else as JSON ("5", null). */
+/** "1 star", "3 stars". */
+function starsText(star: StarRating): string {
+  return `${star} ${star === 1 ? 'star' : 'stars'}`;
+}
+
+/** Shows a bad value in an error message: numbers as-is (NaN, -1), else as JSON ("5", null). */
 function showValue(value: unknown): string {
   return typeof value === 'number' ? String(value) : (JSON.stringify(value) ?? String(value));
 }
@@ -162,7 +179,7 @@ export type RatingSummaryModel = RatedSummaryModel | EmptySummaryModel;
  */
 export function summarise(
   counts: RatingCounts,
-  labelFor: (score: number) => string = defaultLabelFor,
+  labelFor: LabelFor = defaultLabelFor,
 ): RatingSummaryModel {
   const valid = validateCounts(counts);
   const total = totalOf(valid);

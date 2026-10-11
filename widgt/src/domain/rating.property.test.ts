@@ -14,14 +14,26 @@ const PARAMS: fc.Parameters<unknown> = { seed: 20261011, numRuns: 1000 };
 
 // Mostly small counts: with small totals, averages land exactly on x.x5 often
 // enough to exercise half-up rounding. Large counts still cover big catalogues.
-const count = fc.oneof({ weight: 4, arbitrary: fc.nat({ max: 20 }) }, { weight: 1, arbitrary: fc.nat({ max: 1_000_000 }) });
-const anyCounts: fc.Arbitrary<RatingCounts> = fc.record({ 5: count, 4: count, 3: count, 2: count, 1: count });
+const count = fc.oneof(
+  { weight: 4, arbitrary: fc.nat({ max: 20 }) },
+  { weight: 1, arbitrary: fc.nat({ max: 1_000_000 }) },
+);
+const anyCounts: fc.Arbitrary<RatingCounts> = fc.record({
+  5: count,
+  4: count,
+  3: count,
+  2: count,
+  1: count,
+});
 const someReviews = anyCounts.filter((counts) => totalOf(counts) > 0);
 /** Every score the widget can show: 0 (no reviews) and 1.0 to 5.0 in tenths. */
-const shownScore = fc.oneof(fc.constant(0), fc.integer({ min: 10, max: 50 }).map((tenths) => tenths / 10));
+const shownScore = fc.oneof(
+  fc.constant(0),
+  fc.integer({ min: 10, max: 50 }).map((tenths) => tenths / 10),
+);
 
 describe('rating properties (fast-check)', () => {
-  it('AC-1.4 every star fill is an exact tenth in [0, 1] and fills never increase from star 1 to star 5', () => {
+  it('AC-1.4 each fill is an exact tenth in [0, 1], never increasing from star 1 to 5', () => {
     fc.assert(
       fc.property(shownScore, (score) => {
         const fills = starFills(score);

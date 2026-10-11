@@ -16,5 +16,7 @@ export function formatCount(count: number, locale: string = DEFAULT_LOCALE): str
  * @param locale - A BCP 47 locale tag.
  */
 export function formatPercent(share: number, locale: string = DEFAULT_LOCALE): string {
-  return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(share);
+  return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(
+    share,
+  );
 }
