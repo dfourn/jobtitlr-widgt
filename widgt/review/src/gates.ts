@@ -182,9 +182,13 @@ export function checkForbiddenPatterns(fs: ReadonlyFs, dirs: readonly string[] =
  * `current` is `null` when the test results could not be read.
  */
 export function checkTestCount(current: number | null, previous: number | null): GateResult {
-  void current;
-  void previous;
-  throw new Error('not implemented');
+  const gate = (passed: boolean, detail: string): GateResult => ({ id: 'G6', name: 'Test count', passed, detail });
+  if (current === null) return gate(false, 'unit test results are missing');
+  if (previous === null) return gate(true, `${String(current)} tests (no previous run)`);
+  if (current < previous) {
+    return gate(false, `${String(current)} tests, down from ${String(previous)} (-${String(previous - current)})`);
+  }
+  return gate(true, `${String(current)} tests (was ${String(previous)})`);
 }
 
 /** A gate that passes when a command exits with 0. */
@@ -212,9 +216,20 @@ export async function runCommandGates(
   runner: CommandRunner,
   gates: readonly CommandGate[] = COMMAND_GATES,
 ): Promise<CommandGateResult[]> {
-  void runner;
-  void gates;
-  return Promise.reject(new Error('not implemented'));
+  const results: CommandGateResult[] = [];
+  for (const gate of gates) {
+    const commandLine = [gate.command, ...gate.args].join(' ');
+    const run = await runner.run(gate.command, gate.args);
+    const passed = run.code === 0;
+    results.push({
+      id: gate.id,
+      name: gate.name,
+      passed,
+      detail: passed ? `${commandLine} passed` : `${commandLine} exited with ${String(run.code)}`,
+      excerpt: passed ? [] : errorExcerpt(`${run.stdout}\n${run.stderr}`),
+    });
+  }
+  return results;
 }
 
 /**
@@ -223,7 +238,18 @@ export async function runCommandGates(
  * because spec 03 §5 forbids feeding whole logs back to the generator.
  */
 export function errorExcerpt(output: string, maxLines = 5): string[] {
-  void output;
-  void maxLines;
-  throw new Error('not implemented');
+  const lines = stripAnsi(output)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line !== '');
+  const errors = lines.filter((line) => /\berror\b|\bfailed\b/i.test(line));
+  const chosen = errors.length > 0 ? errors.slice(0, maxLines) : lines.slice(-maxLines);
+  return chosen.map((line) => (line.length > 200 ? `${line.slice(0, 199)}…` : line));
+}
+
+const ANSI = new RegExp(`${String.fromCharCode(27)}\\[[0-9;]*[A-Za-z]`, 'g');
+
+/** Removes ANSI colour codes. */
+export function stripAnsi(text: string): string {
+  return text.replace(ANSI, '');
 }
