@@ -6,12 +6,13 @@
  * alone in the 360px `?visual=1` wrapper, with the card cropped out of
  * `review/reference/widget-reference.png`, on foreground pixels. It is deliberately not asserted
  * here. Before capturing, the test checks the widget is built from markup rather than a pasted
- * picture of the reference, which the generator is allowed to read.
+ * picture of the reference, which the generator is allowed to read. The checks cover the whole
+ * page, because the screenshot holds whatever is painted in the widget's box.
  *
  * DOM hooks: `data-testid="product-rating"`, `data-testid="bar-fill-N"` and `data-testid="bar-track-N"`.
  */
 import { mkdirSync, readFileSync } from 'node:fs';
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { RUN_DIR, URLS, VIEWPORT_WIDTHS, openScenario, widgetOf } from './helpers';
 
 const SCREENSHOT_DIR = `${RUN_DIR}screenshots/`;
@@ -29,31 +30,126 @@ const VISUAL_WRAPPER_WIDTH = 360;
  */
 const MAX_LOGO_SHARE = 0.04;
 
-/** Elements that can paint a picture without an `<img>`. */
-const PICTURE_ELEMENTS = 'canvas, iframe, object, embed, video, svg image, feImage, input[type="image"]';
+/**
+ * Elements that can paint a picture without an `<img>`. None may appear **anywhere** on the
+ * `?visual=1` page, not only inside the widget: `widget.screenshot()` captures whatever is painted in
+ * the widget's box, including an element or pseudo-element drawn over or behind it.
+ */
+const PICTURE_ELEMENTS =
+  'picture, source, canvas, iframe, object, embed, video, svg image, feImage, pattern, input[type="image"]';
 
 /**
- * Lists every place inside `widget` (itself included, with its `::before` and `::after`) where CSS
- * paints an image from a URL: `background-image`, `border-image-source`, `list-style-image` or
- * generated `content`. Gradients are fine; `url()` and `image-set()` are not.
+ * Runs in the page. Lists the `PICTURE_ELEMENTS` in the whole document, plus every SVG `<use>` whose
+ * href is not a same-document `#fragment` (an external file could carry an image).
  */
-async function cssImages(widget: Locator): Promise<string[]> {
-  return widget.evaluate((root) => {
-    const found: string[] = [];
-    const properties = ['background-image', 'border-image-source', 'list-style-image', 'content'];
-    for (const el of [root, ...Array.from(root.querySelectorAll('*'))]) {
-      for (const pseudo of [null, '::before', '::after']) {
-        const style = getComputedStyle(el, pseudo);
-        for (const property of properties) {
-          const value = style.getPropertyValue(property);
-          if (/url\(|image-set\(/i.test(value)) {
-            found.push(`${el.tagName.toLowerCase()}${pseudo ?? ''} ${property}: ${value.slice(0, 80)}`);
-          }
+function pictureElementsOnPage(selector: string): string[] {
+  const reference = (use: Element): string =>
+    use.getAttribute('href') ?? use.getAttributeNS('http://www.w3.org/1999/xlink', 'href') ?? '';
+  const externalUses = Array.from(document.querySelectorAll('use')).filter((use) => !reference(use).startsWith('#'));
+  return [...Array.from(document.querySelectorAll(selector)), ...externalUses].map((el) => el.outerHTML.slice(0, 100));
+}
+
+/**
+ * Runs in the page. Lists every place in the whole document where CSS could paint a picture: each
+ * element and its pseudo-elements, property by property, one line per offence. `cursor` is ignored,
+ * because a cursor is not in the screenshot. The rules:
+ * - painting properties (`PAINTING`): no `url()` at all;
+ * - masks and clips (`ALPHA_ONLY`) carry only alpha, so they cannot reproduce the card's colours:
+ *   an SVG made of shapes (a `.svg` file or a `data:image/svg+xml` URI, with no `<image>`,
+ *   `<feImage>`, `<foreignObject>` or `data:` URI inside) or a `#id` of a `<mask>` or `<clipPath>`
+ *   in the page is allowed;
+ * - SVG `fill` and `stroke` (`SVG_PAINT`) may reference a `<linearGradient>` or `<radialGradient>`
+ *   in the page by `#id` (a partially filled star), nothing else;
+ * - nowhere an `image-set()` or a `paint()` worklet, which can draw arbitrary pixels.
+ */
+async function cssImagesOnPage(): Promise<string[]> {
+  const PAINTING = ['background-image', 'border-image-source', 'list-style-image', 'content', 'filter', 'backdrop-filter'];
+  const ALPHA_ONLY = ['mask-image', '-webkit-mask-box-image-source', 'clip-path'];
+  const SVG_PAINT = ['fill', 'stroke'];
+  const PSEUDOS = [null, '::before', '::after', '::marker', '::first-letter', '::first-line'];
+  const here = new URL(location.href);
+
+  const urlsIn = (value: string): string[] =>
+    Array.from(value.matchAll(/url\(\s*(["']?)(.*?)\1\s*\)/gi), (match) => match[2] ?? '');
+
+  /** The local name of the element a same-document `#id` URL points at, or `null` for any other URL. */
+  const fragmentTarget = (url: string): string | null => {
+    const target = new URL(url, document.baseURI);
+    const samePage = target.origin === here.origin && target.pathname === here.pathname && target.search === here.search;
+    if (!samePage || target.hash.length < 2) return null;
+    return document.getElementById(decodeURIComponent(target.hash.slice(1)))?.localName ?? null;
+  };
+
+  /** Whether an SVG file or data URI is made of shapes only, so as a mask it carries nothing but alpha. */
+  const isShapesOnlySvg = async (url: string): Promise<boolean> => {
+    const isSvg = url.toLowerCase().startsWith('data:image/svg+xml') || new URL(url, document.baseURI).pathname.endsWith('.svg');
+    if (!isSvg) return false;
+    try {
+      const text = await (await fetch(url)).text();
+      return !/<(?:[\w-]+:)?(?:image|feImage|foreignObject)\b|data:/i.test(text);
+    } catch {
+      return false;
+    }
+  };
+
+  const isAllowedMask = async (url: string): Promise<boolean> =>
+    ['mask', 'clipPath'].includes(fragmentTarget(url) ?? '') || (await isShapesOnlySvg(url));
+  const isAllowedSvgPaint = (url: string): boolean =>
+    ['linearGradient', 'radialGradient'].includes(fragmentTarget(url) ?? '');
+
+  const offences: string[] = [];
+  for (const el of Array.from(document.querySelectorAll('*'))) {
+    const own = getComputedStyle(el);
+    for (const pseudo of PSEUDOS) {
+      const style = getComputedStyle(el, pseudo);
+      // A pseudo-element's value equal to its element's is inherited or repeated: reported once, on the element.
+      const valueOf = (property: string): string => {
+        const value = style.getPropertyValue(property);
+        return pseudo !== null && value === own.getPropertyValue(property) ? '' : value;
+      };
+      const report = (property: string, value: string, why: string): void => {
+        offences.push(`${el.localName}${pseudo ?? ''} ${property}: ${value.slice(0, 100)} (${why})`);
+      };
+      for (const property of [...PAINTING, ...ALPHA_ONLY, ...SVG_PAINT]) {
+        const value = valueOf(property);
+        if (/image-set\(|paint\(/i.test(value)) report(property, value, 'image-set() and paint() can draw a picture');
+      }
+      for (const property of PAINTING) {
+        const value = valueOf(property);
+        if (urlsIn(value).length > 0) report(property, value, 'an image from a URL');
+      }
+      for (const property of ALPHA_ONLY) {
+        const value = valueOf(property);
+        for (const url of urlsIn(value)) {
+          if (!(await isAllowedMask(url))) report(property, value, 'masks and clips must be SVG shapes');
+        }
+      }
+      for (const property of SVG_PAINT) {
+        const value = valueOf(property);
+        for (const url of urlsIn(value)) {
+          if (!isAllowedSvgPaint(url)) report(property, value, 'SVG paint may only reference a gradient in the page');
         }
       }
     }
-    return found;
-  });
+  }
+  return offences;
+}
+
+/**
+ * Runs in the page. Lists the widget or ancestors (up to `<html>`) that are not fully opaque,
+ * not visible, or blended with what is behind them: any of these lets something painted behind the
+ * widget show through in its screenshot.
+ */
+function seeThroughAncestors(widget: Element): string[] {
+  const found: string[] = [];
+  for (let el: Element | null = widget; el !== null; el = el.parentElement) {
+    const style = getComputedStyle(el);
+    const name = el === widget ? 'the widget' : `<${el.localName}>`;
+    if (style.opacity !== '1') found.push(`${name} opacity: ${style.opacity}`);
+    if (style.visibility !== 'visible') found.push(`${name} visibility: ${style.visibility}`);
+    if (style.mixBlendMode !== 'normal') found.push(`${name} mix-blend-mode: ${style.mixBlendMode}`);
+  }
+  return found;
 }
 
 /** Reads width and height from a PNG's IHDR chunk. */
@@ -128,13 +224,12 @@ test.describe('AC-6 visual fidelity', () => {
       const widget = widgetOf(page);
 
       // Guards first: the score must come from markup and CSS, not from a picture of the reference.
+      // `widget.screenshot()` captures everything painted in the widget's box, so the whole page is checked.
       await expect(widget, 'the widget is visible in ?visual=1').toBeVisible();
+      await expect(page.locator('img'), 'the page contains exactly one <img>, the feefo logo').toHaveCount(1);
       const images = widget.locator('img');
-      await expect(images, 'the widget contains exactly one <img>, the feefo logo').toHaveCount(1);
-      await expect(images, 'the only <img> in the widget is the feefo logo (alt="feefo")').toHaveAttribute(
-        'alt',
-        'feefo',
-      );
+      await expect(images, 'the one <img> on the page is inside the widget').toHaveCount(1);
+      await expect(images, 'the only <img> is the feefo logo (alt="feefo")').toHaveAttribute('alt', 'feefo');
       const [logoBox, widgetBox] = await Promise.all([images.boundingBox(), widget.boundingBox()]);
       const widgetArea = widgetBox === null ? 0 : widgetBox.width * widgetBox.height;
       const logoArea = logoBox === null ? 0 : logoBox.width * logoBox.height;
@@ -142,12 +237,18 @@ test.describe('AC-6 visual fidelity', () => {
         widgetArea === 0 ? 1 : logoArea / widgetArea,
         `the feefo logo covers at most ${MAX_LOGO_SHARE * 100}% of the widget, so it cannot be a picture of the card`,
       ).toBeLessThanOrEqual(MAX_LOGO_SHARE);
-      expect(await cssImages(widget), 'no CSS url() or image-set() images inside the widget').toEqual([]);
-      const pictures = await widget.evaluate(
-        (root, selector) => Array.from(root.querySelectorAll(selector)).map((el) => el.outerHTML.slice(0, 80)),
-        PICTURE_ELEMENTS,
-      );
-      expect(pictures, `no ${PICTURE_ELEMENTS} inside the widget`).toEqual([]);
+      expect(
+        await page.evaluate(pictureElementsOnPage, PICTURE_ELEMENTS),
+        `no ${PICTURE_ELEMENTS} and no external SVG <use> anywhere on the page`,
+      ).toEqual([]);
+      expect(
+        await page.evaluate(cssImagesOnPage),
+        'no CSS image anywhere on the page (url() only for SVG-shape masks and clips, or a gradient fill or stroke)',
+      ).toEqual([]);
+      expect(
+        await widget.evaluate(seeThroughAncestors),
+        'the widget and its ancestors are opaque, visible and not blended, so nothing behind it shows through',
+      ).toEqual([]);
       const visualTree = await widget.ariaSnapshot();
       const staticPage = await page.context().newPage();
       const staticTree = await (await openScenario(staticPage, URLS.static)).ariaSnapshot();
