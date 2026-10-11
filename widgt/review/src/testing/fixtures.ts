@@ -33,6 +33,7 @@ export const sampleReport: ReviewReport = {
   testCount: 40,
   contract: { passed: 18, total: 22 },
   judgeScores: null,
+  visualRegions: null,
   failures: [
     failure('AC-4.3'),
     failure('AC-5.2'),

@@ -137,6 +137,7 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
     testCount: unitRate.testCount,
     contract: contractResults === null ? null : { passed: contract.passed, total: contract.total },
     judgeScores: judged === null || judged.score === null ? null : judged.criteria,
+    visualRegions: presence.present ? collected.regions : null,
     failures: rankFailures([...contract.failures, ...unitRate.failures]),
     notes,
   };
