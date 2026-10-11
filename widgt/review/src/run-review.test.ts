@@ -129,6 +129,16 @@ describe('AC-L1 runReview()', () => {
     expect(report.signals.unit.value).toBe(75);
   });
 
+  it('AC-L10 report.json carries the visual region diagnostics when the widget is rendered', async () => {
+    const { report } = await review();
+    expect(report.visualRegions?.map((region) => region.name)).toEqual(['label', 'stars', 'score', 'brand', 'rows']);
+  });
+
+  it('AC-L10 report.json has no region diagnostics when the widget is not rendered', async () => {
+    const { report } = await review(false);
+    expect(report.visualRegions).toBeNull();
+  });
+
   it('AC-L1 fails G6 when the test count drops below the previous run', async () => {
     await review();
     const latest = join(root, 'review', 'runs', 'latest', 'report.json');
