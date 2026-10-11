@@ -2,17 +2,16 @@
  * Contract: AC-6 "Visual fidelity" (spec 02, section 5).
  *
  * AC-6.3 only captures evidence. Pixel similarity is a soft signal computed by the review
- * harness (spec 03, section 3) from `review/runs/latest/screenshots/visual-401.png` and
+ * harness (spec 03, section 3) from `<run dir>/screenshots/visual-401.png` and
  * `review/reference/widget-reference.png`; it is deliberately not asserted here.
  *
  * DOM hooks: `data-testid="product-rating"`, `data-testid="bar-fill-N"` and `data-testid="bar-track-N"`.
  */
 import { mkdirSync, readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
-import { URLS, VIEWPORT_WIDTHS, openScenario, widgetOf } from './helpers';
+import { RUN_DIR, URLS, VIEWPORT_WIDTHS, openScenario, widgetOf } from './helpers';
 
-const SCREENSHOT_DIR = fileURLToPath(new URL('../runs/latest/screenshots/', import.meta.url));
+const SCREENSHOT_DIR = `${RUN_DIR}screenshots/`;
 
 /** The reference image is 401 x 443 px (docs/brief/README.md). */
 const REFERENCE_SIZE = { width: 401, height: 443 } as const;

@@ -4,7 +4,24 @@
  * Everything here is derived from the spec, never from an implementation.
  * The DOM hooks the components must expose are listed in `README.md`.
  */
+import { resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, type Locator, type Page } from '@playwright/test';
+
+/**
+ * The folder this run writes into, absolute and ending in a path separator: `REVIEW_RUN_DIR`
+ * when it is set (the review harness passes it, spec 03 section 4), else `review/runs/latest/`.
+ * The JSON report, Playwright's output, the screenshots and the axe results all go under it.
+ */
+export const RUN_DIR = runDirFrom(process.env.REVIEW_RUN_DIR);
+
+function runDirFrom(fromEnv: string | undefined): string {
+  const dir =
+    fromEnv === undefined || fromEnv.trim() === ''
+      ? fileURLToPath(new URL('../runs/latest/', import.meta.url))
+      : resolve(fromEnv);
+  return dir.endsWith(sep) ? dir : `${dir}${sep}`;
+}
 
 /** Demo page scenarios (spec 02, section 8). */
 export const URLS = {
