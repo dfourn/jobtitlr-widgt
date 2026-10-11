@@ -81,7 +81,7 @@ Errors: the widget validates its counts and throws during render (fail fast, AC-
 - **AC-3.3** The breakdown is a list (`<ul>`/`<li>`). Each row has the accessible name "N stars: C reviews (P%)" ("1 star" in the singular).
 - **AC-3.4** Visible uppercase text is uppercase through CSS only. The DOM text is sentence case.
 - **AC-3.5** The logo is an `<img>` with `alt="feefo"`. The decorative small stars have `alt=""` or `aria-hidden`.
-- **AC-3.6** axe-core reports **0 violations** at WCAG 2.2 AA in the default and selected states.
+- **AC-3.6** axe-core reports **0 violations** at WCAG 2.2 AA in the default, static and selected states.
 - **AC-3.7** Interactive rows have a visible focus indicator (`:focus-visible`) with at least 3:1 contrast.
 
 ### AC-4 Interactions (B2.9, A-W1)
@@ -102,7 +102,7 @@ Errors: the widget validates its counts and throws during render (fail fast, AC-
 ### AC-6 Visual fidelity (B2.2, B2.11)
 - **AC-6.1** The font is Poppins, self-hosted (A-W9).
 - **AC-6.2** Colours come from design tokens matching the measured reference: yellow `#ffcb31`, track `#e2e2e2`, empty star `#d4d4d4`, dark text `#25292f`, muted text `#646c76`.
-- **AC-6.3** At 401px wide, pixel similarity to the reference is at least the threshold set in spec 03. This is a soft signal, not a gate.
+- **AC-6.3** The widget's own screenshot (in the 360px `?visual=1` wrapper) is compared with the reference card on foreground pixels (spec 03, section 3). The similarity is a soft signal that adds to the score; there is no pass threshold and it is not a gate.
 
 ### AC-7 Code quality (B2.4, B2.5, B2.6)
 - **AC-7.1** TypeScript `strict`, with no `any` and no non-null `!` assertions in `src/`.
@@ -135,6 +135,6 @@ Errors: the widget validates its counts and throws during render (fail fast, AC-
 | `/` | Interactive mode: `onRatingSelect` is wired to page state. Below the widget, an element with `role="status"` and `data-testid="selection"` shows `Selected: none` or `Selected: N stars` (singular for 1). |
 | `/?interactive=0` | Static mode: no `onRatingSelect`. |
 | `/?empty=1` | All counts are 0, in interactive mode. |
-| `/?visual=1` | Static mode. Only the widget, on a white page with no margin, in a wrapper exactly **401px** wide. Used for screenshot comparison with the 401x443 reference. |
+| `/?visual=1` | Static mode. Only the widget, on a white page with no margin, in a wrapper exactly **360px** wide (the reference card's width). The widget's accessibility tree matches `/?interactive=0`, and it shows no images other than the feefo logo. Used for screenshot comparison with the card in the 401x443 reference. |
 
 The widget is the only element with `data-testid="product-rating"`. The page has one `<main>` landmark, and its `<h1>` reads "widgt demo" (visually hidden in `?visual=1`).
