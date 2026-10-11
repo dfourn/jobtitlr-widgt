@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { axeScore, DEFAULT_WEIGHTS, score, visualScore } from './score';
+import { axeScore, DEFAULT_WEIGHTS, score, VISUAL_CEILING, VISUAL_FLOOR, visualScore } from './score';
 import type { GateId, GateResult, Signals } from './types';
 
 const passing: readonly GateResult[] = (['G1', 'G2', 'G3', 'G4', 'G5', 'G6'] as const).map((id) => ({
@@ -99,14 +99,21 @@ describe('AC-L2 signal mappings', () => {
 
   it.each([
     { similarity: 0, expected: 0 },
-    { similarity: 0.8, expected: 0 },
-    { similarity: 0.89, expected: 50 },
-    { similarity: 0.935, expected: 75 },
-    { similarity: 0.98, expected: 100 },
+    { similarity: 0.05, expected: 0 },
+    { similarity: 0.1, expected: 0 },
+    { similarity: 0.5, expected: 50 },
+    { similarity: 0.7, expected: 75 },
+    { similarity: 0.864, expected: 95.5 },
+    { similarity: 0.617, expected: 64.6 },
+    { similarity: 0.9, expected: 100 },
+    { similarity: 0.95, expected: 100 },
     { similarity: 1, expected: 100 },
-    { similarity: 0.85, expected: 27.8 },
-  ])('AC-L2 visual similarity $similarity maps to $expected', ({ similarity, expected }) => {
+  ])('AC-L10 foreground similarity $similarity maps to $expected (0.10 -> 0, 0.90 -> 100, clamped)', ({ similarity, expected }) => {
     expect(visualScore(similarity)).toBe(expected);
+  });
+
+  it('AC-L10 the visual floor and ceiling are 0.10 and 0.90', () => {
+    expect([VISUAL_FLOOR, VISUAL_CEILING]).toEqual([0.1, 0.9]);
   });
 
   it('AC-L2 a non-finite similarity maps to 0', () => {
