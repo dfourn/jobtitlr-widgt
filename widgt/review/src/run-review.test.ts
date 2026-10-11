@@ -16,15 +16,45 @@ function whiteImage(width: number, height: number) {
   return { width, height, data: new Uint8Array(width * height * 4).fill(255) };
 }
 
+/** Files the contract tests write, as a unit test might forge them (relative to the run folder). */
+const FORGEABLE = ['axe/selected.json', 'screenshots/visual-widget.png', 'contract-results.json'] as const;
+
+interface FakeToolsOptions {
+  /** The AC-1.1 and AC-1.2 contract tests pass (the widget-presence precondition). */
+  readonly rendered: boolean;
+  /** The AC-6.3 widget-capture contract test passes; when `false` it fails but still leaves its screenshot. */
+  readonly captured: boolean;
+  /** A unit test writes every file in {@link FORGEABLE} into the run folder while Vitest runs. */
+  readonly forge: boolean;
+  /** When set, the contract tests write nothing at all, as if Playwright failed to start. */
+  readonly e2eWritesNothing: boolean;
+  /** Receives, when the contract tests start, which forgeable files still exist. */
+  readonly seenAtE2e: Map<string, boolean>;
+}
+
 /**
  * Plays the other tools: Vitest writes its JSON, the contract tests write theirs and the widget screenshot.
- * With `rendered`, the AC-1.1 and AC-1.2 contract tests pass (the widget-presence precondition).
  */
-function fakeTools(root: string, calls: string[], rendered: boolean): CommandRunner {
+function fakeTools(root: string, calls: string[], options: FakeToolsOptions): CommandRunner {
+  const { rendered, captured } = options;
+  const latest = join(root, 'review', 'runs', 'latest');
   return {
-    run: (command, args, options) => {
+    run: (command, args, runOptions) => {
       calls.push([command, ...args].join(' '));
       const outputFile = args.find((arg) => arg.startsWith('--outputFile='));
+      if (outputFile !== undefined && options.forge) {
+        for (const file of FORGEABLE) {
+          mkdirSync(join(latest, file, '..'), { recursive: true });
+          writeFileSync(join(latest, file), file.endsWith('.json') ? '{"violations": [], "suites": []}' : 'forged');
+        }
+        writePng(join(latest, 'screenshots', 'visual-widget.png'), whiteImage(360, 405));
+      }
+      if (args.includes('test:e2e')) {
+        for (const file of FORGEABLE) options.seenAtE2e.set(file, existsSync(join(latest, file)));
+      }
+      if (args.includes('test:e2e') && options.e2eWritesNothing) {
+        return Promise.resolve({ code: 1, stdout: '', stderr: 'Error: Process from config.webServer exited early.' });
+      }
       if (outputFile !== undefined) {
         writeFileSync(
           outputFile.slice('--outputFile='.length),
@@ -40,7 +70,7 @@ function fakeTools(root: string, calls: string[], rendered: boolean): CommandRun
         );
       }
       if (args.includes('test:e2e')) {
-        const runDir = options?.env?.REVIEW_RUN_DIR ?? '';
+        const runDir = runOptions?.env?.REVIEW_RUN_DIR ?? '';
         writeFileSync(
           join(runDir, 'contract-results.json'),
           JSON.stringify({
@@ -53,6 +83,19 @@ function fakeTools(root: string, calls: string[], rendered: boolean): CommandRun
                   { title: 'AC-1.2 five rows', file: 'widget.spec.ts', line: 2, tests: [{ status: 'expected', results: [] }] },
                   { title: 'AC-4.3 clicking the selected row clears it', file: 'widget.spec.ts', line: 3, tests: [{ status: 'unexpected', results: [{ error: { message: 'Expected "false"' } }] }] },
                   { title: 'AC-5.2 no overflow at 320', file: 'widget.spec.ts', line: 8, tests: [{ status: 'expected', results: [] }] },
+                ],
+                suites: [
+                  {
+                    title: 'at the reference width',
+                    specs: [
+                      {
+                        title: 'AC-6.3 captures the widget in its 360px wrapper for the similarity score',
+                        file: 'visual.spec.ts',
+                        line: 9,
+                        tests: [{ status: captured ? 'expected' : 'unexpected', results: captured ? [] : [{ error: { message: 'no CSS image anywhere on the page' } }] }],
+                      },
+                    ],
+                  },
                 ],
               },
             ],
@@ -81,13 +124,18 @@ describe('AC-L1 runReview()', () => {
     rmSync(base, { recursive: true, force: true });
   });
 
-  async function review(rendered = true): Promise<{ report: ReviewReport; calls: string[] }> {
+  async function review(
+    rendered = true,
+    tools: Partial<FakeToolsOptions> = {},
+  ): Promise<{ report: ReviewReport; calls: string[]; seenAtE2e: Map<string, boolean> }> {
     const calls: string[] = [];
+    const seenAtE2e = new Map<string, boolean>();
+    const options: FakeToolsOptions = { rendered, captured: true, forge: false, e2eWritesNothing: false, seenAtE2e, ...tools };
     const report = await runReview(
-      { root, fs: nodeFs(root), runner: fakeTools(root, calls, rendered), judge: new NoJudge(), now: () => new Date('2026-10-11T12:00:00Z'), log: () => undefined },
+      { root, fs: nodeFs(root), runner: fakeTools(root, calls, options), judge: new NoJudge(), now: () => new Date('2026-10-11T12:00:00Z'), log: () => undefined },
       { paths: defaultPaths(), iteration: null, baselineReport: 'review/runs/latest/report.json' },
     );
-    return { report, calls };
+    return { report, calls, seenAtE2e };
   }
 
   it('AC-L1 runs the gates, Vitest and the contract tests without any AI', async () => {
@@ -108,14 +156,14 @@ describe('AC-L1 runReview()', () => {
     expect(existsSync(join(latest, 'diff.png'))).toBe(true);
     expect(JSON.parse(readFileSync(join(latest, 'report.json'), 'utf8'))).toEqual(report);
     expect(report.gatesPassed).toBe(true);
-    expect(report.signals.contract.value).toBe(75);
+    expect(report.signals.contract.value).toBe(80);
     expect(report.signals.unit.value).toBe(75);
     expect(report.signals.responsive.value).toBe(100);
     expect(report.signals.visual.value).toBe(100);
     expect(report.signals.a11y).toMatchObject({ value: 0, status: 'ok', detail: '0: no axe results found in review/runs/latest/axe' });
     expect(report.signals.judge.status).toBe('off');
-    // (75*25 + 75*15 + 0*20 + 100*15 + 100*10) / 85
-    expect(report.total).toBe(64.7);
+    // (80*25 + 75*15 + 0*20 + 100*15 + 100*10) / 85
+    expect(report.total).toBe(66.2);
     expect(report.failures.map((f) => f.acId)).toEqual(['AC-4.3']);
   });
 
@@ -125,7 +173,7 @@ describe('AC-L1 runReview()', () => {
     expect(report.signals.a11y).toMatchObject({ value: 0, status: 'ok', detail: reason });
     expect(report.signals.responsive).toMatchObject({ value: 0, status: 'ok', detail: reason });
     expect(report.signals.visual).toMatchObject({ value: 0, status: 'ok', detail: reason });
-    expect(report.signals.contract.value).toBe(50);
+    expect(report.signals.contract.value).toBe(60);
     expect(report.signals.unit.value).toBe(75);
   });
 
@@ -136,6 +184,37 @@ describe('AC-L1 runReview()', () => {
 
   it('AC-L10 report.json has no region diagnostics when the widget is not rendered', async () => {
     const { report } = await review(false);
+    expect(report.visualRegions).toBeNull();
+  });
+
+  it.each([
+    { ac: 'AC-L9', file: 'axe/selected.json' },
+    { ac: 'AC-L10', file: 'screenshots/visual-widget.png' },
+    { ac: 'AC-L8', file: 'contract-results.json' },
+  ])('$ac a forged $file is gone before the contract tests run', async ({ file }) => {
+    const { seenAtE2e } = await review(true, { forge: true });
+    expect(seenAtE2e.get(file)).toBe(false);
+  });
+
+  it('AC-L9 an axe result forged by a unit test does not score when the contract tests write none', async () => {
+    const { report } = await review(true, { forge: true });
+    expect(report.signals.a11y.detail).toBe('0: no axe results found in review/runs/latest/axe');
+  });
+
+  it('AC-L8 contract results forged by a unit test are not read when Playwright fails to start', async () => {
+    const { report } = await review(true, { forge: true, e2eWritesNothing: true });
+    expect(report.signals.contract).toMatchObject({ value: null, status: 'missing' });
+    expect(report.signals.visual.value).toBe(0);
+  });
+
+  it('AC-L10 scores visual 0 with the reason unless the AC-6.3 widget-capture contract test passed', async () => {
+    const { report } = await review(true, { captured: false });
+    expect(existsSync(join(root, 'review', 'runs', 'latest', 'screenshots', 'visual-widget.png'))).toBe(true);
+    expect(report.signals.visual).toMatchObject({
+      value: 0,
+      status: 'ok',
+      detail: '0: the widget capture is not trusted (the AC-6.3 widget-capture contract test failed)',
+    });
     expect(report.visualRegions).toBeNull();
   });
 
