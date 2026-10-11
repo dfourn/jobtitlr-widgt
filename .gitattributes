@@ -1,0 +1,6 @@
+# Text is stored and checked out with LF line endings on every OS, so file hashes
+# (the review harness lock, gate G4) do not change under core.autocrlf.
+* text=auto eol=lf
+
+*.png binary
+*.pdf binary
