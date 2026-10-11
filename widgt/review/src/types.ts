@@ -41,6 +41,9 @@ export interface Failure {
   readonly message: string;
 }
 
+/** How far, in px, the visual region diagnostics search for a better fit in each direction (AC-L10). */
+export const REGION_SEARCH = 8;
+
 /** Visual diagnostics for one region of the reference card (AC-L10). Not scored. */
 export interface RegionDiagnostic {
   readonly name: string;

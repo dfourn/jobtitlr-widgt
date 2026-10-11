@@ -3,7 +3,7 @@ import { dirname, relative, sep } from 'node:path';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { visualScore } from '../score';
-import type { RegionDiagnostic } from '../types';
+import { REGION_SEARCH, type RegionDiagnostic } from '../types';
 
 /** An RGBA bitmap, 4 bytes per pixel, row-major. */
 export interface RgbaImage {
@@ -165,9 +165,6 @@ export const VISUAL_REGIONS: readonly VisualRegion[] = [
   { name: 'brand', box: { x: 58, y: 178, width: 244, height: 35 } },
   { name: 'rows', box: { x: 18, y: 252, width: 324, height: 134 } },
 ];
-
-/** How far, in px, the region diagnostics search for a better fit in each direction. */
-export const REGION_SEARCH = 8;
 
 /** The `width` x `height` window of `image` at (x, y); pixels outside `image` are white. */
 function windowAt(image: RgbaImage, x: number, y: number, width: number, height: number): RgbaImage {
