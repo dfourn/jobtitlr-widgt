@@ -6,7 +6,7 @@ import pixelmatch from 'pixelmatch';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { abs, WIDGT_ROOT } from '../config';
 import { blank, cropped, paint, pixel, shifted, stripes } from '../testing/images';
-import { collectVisual, compareImages, fitToSize, readPng, REFERENCE_CARD, writePng, type RgbaImage } from './visual';
+import { collectVisual, compareImages, fitToSize, INK_BELOW, readPng, REFERENCE_CARD, VISUAL_REGIONS, writePng, type RgbaImage } from './visual';
 
 /** A solid-colour image, optionally with a black block in the top-left corner. */
 function image(width: number, height: number, rgb: readonly [number, number, number], block = 0): RgbaImage {
@@ -219,5 +219,74 @@ describe('AC-L10 the reference card', () => {
     const signal = collectVisual({ screenshot, reference, diff: join(dir, 'diff.png') });
     expect(signal.value).toBeNull();
     expect(signal.detail).toBe('could not compare images: the reference (100x100) does not contain the card box 360x405 at (20, 16)');
+  });
+});
+
+describe('AC-L10 region diagnostics', () => {
+  const referencePath = abs(WIDGT_ROOT, 'review/reference/widget-reference.png');
+  const realCard = cropped(readPng(referencePath), 20, 16, 360, 405);
+  let dir = '';
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'widgt-regions-'));
+  });
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true });
+  });
+
+  it('AC-L10 names five regions in card coordinates, each holding ink in the real reference', () => {
+    expect(VISUAL_REGIONS).toEqual([
+      { name: 'label', box: { x: 106, y: 42, width: 145, height: 25 } },
+      { name: 'stars', box: { x: 58, y: 81, width: 244, height: 52 } },
+      { name: 'score', box: { x: 121, y: 145, width: 115, height: 19 } },
+      { name: 'brand', box: { x: 58, y: 178, width: 244, height: 35 } },
+      { name: 'rows', box: { x: 18, y: 252, width: 324, height: 134 } },
+    ]);
+    for (const { name, box } of VISUAL_REGIONS) {
+      const region = cropped(realCard, box.x, box.y, box.width, box.height);
+      let ink = 0;
+      for (let at = 0; at < region.data.length; at += 4) {
+        if ((region.data[at] ?? 255) + (region.data[at + 1] ?? 255) + (region.data[at + 2] ?? 255) < INK_BELOW * 3) ink += 1;
+      }
+      expect(ink, name).toBeGreaterThan(0);
+      // The ±8 px search stays inside the card.
+      expect(box.x - 8, name).toBeGreaterThanOrEqual(0);
+      expect(box.y - 8, name).toBeGreaterThanOrEqual(0);
+      expect(box.x + box.width + 8, name).toBeLessThanOrEqual(360);
+      expect(box.y + box.height + 8, name).toBeLessThanOrEqual(405);
+    }
+  });
+
+  it('AC-L10 a copy of the card matches every region at (0, 0)', () => {
+    const screenshot = join(dir, 'visual-widget.png');
+    writePng(screenshot, realCard);
+    const { regions } = collectVisual({ screenshot, reference: referencePath, diff: join(dir, 'diff.png') });
+    expect(regions).toEqual(
+      ['label', 'stars', 'score', 'brand', 'rows'].map((name) => ({ name, similarity: 1, best: { dx: 0, dy: 0, similarity: 1 } })),
+    );
+  });
+
+  it('AC-L10 a region shifted by 3 px reports best offset (3, 0) at similarity 1', () => {
+    // Blocks of different sizes inside the stars region (card x 58-301, y 81-132), so no other offset fits.
+    let card = blank(360, 405);
+    for (const [x, y, w, h] of [[70, 90, 12, 30], [100, 95, 30, 8], [150, 88, 5, 35], [200, 100, 40, 20], [260, 92, 18, 18]] as const) {
+      card = paint(card, x, y, w, h);
+    }
+    const reference = join(dir, 'reference.png');
+    const screenshot = join(dir, 'visual-widget.png');
+    const frame = blank(401, 443);
+    for (let y = 0; y < 405; y += 1) frame.data.set(card.data.subarray(y * 360 * 4, (y + 1) * 360 * 4), ((y + 16) * 401 + 20) * 4);
+    writePng(reference, frame);
+    writePng(screenshot, shifted(card, 3, 0));
+    const { regions } = collectVisual({ screenshot, reference, diff: join(dir, 'diff.png') });
+    const stars = regions?.find((region) => region.name === 'stars');
+    expect(stars?.best).toEqual({ dx: 3, dy: 0, similarity: 1 });
+    expect(stars?.similarity).toBeLessThan(1);
+    // The other regions are blank in both, so nothing moves there.
+    expect(regions?.find((region) => region.name === 'label')).toEqual({ name: 'label', similarity: 1, best: { dx: 0, dy: 0, similarity: 1 } });
+  });
+
+  it('AC-L10 has no region diagnostics when the images cannot be compared', () => {
+    const signal = collectVisual({ screenshot: join(dir, 'missing.png'), reference: referencePath, diff: join(dir, 'diff.png') });
+    expect(signal.regions).toBeNull();
   });
 });
