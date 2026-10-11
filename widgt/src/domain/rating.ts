@@ -82,12 +82,16 @@ const LABEL_BANDS: readonly { readonly min: number; readonly label: string }[] =
 export const defaultLabelFor: LabelFor = (score) =>
   LABEL_BANDS.find((band) => score >= band.min)?.label ?? 'Poor';
 
+/** The only keys a counts object may have, as `Object.keys` reports them ("1" to "5"). */
+const STAR_KEYS: ReadonlySet<string> = new Set(STAR_RATINGS.map(String));
+
 /**
  * Checks counts that may come from untyped input (JSON, props from JS callers) and fails fast.
- * @param input - Should be an object with a count for each of the keys 1 to 5.
- * @returns A frozen copy holding only the five counts.
+ * @param input - Should be an object whose keys are exactly 1 to 5, each holding a count.
+ * @returns A frozen copy of the five counts.
  * @throws TypeError when `input` is not a plain object.
  * @throws RangeError naming the star when a count is missing or is not a finite integer >= 0.
+ * @throws RangeError naming the key when `input` has any key other than 1 to 5 (e.g. "0", "total").
  */
 export function validateCounts(input: unknown): RatingCounts {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) {
@@ -107,13 +111,20 @@ export function validateCounts(input: unknown): RatingCounts {
     }
     return value;
   };
-  return Object.freeze({
+  const counts = {
     5: countFor(5),
     4: countFor(4),
     3: countFor(3),
     2: countFor(2),
     1: countFor(1),
-  });
+  };
+  const unknownKey = Object.keys(fields).find((key) => !STAR_KEYS.has(key));
+  if (unknownKey !== undefined) {
+    throw new RangeError(
+      `Rating counts have an unknown key ${JSON.stringify(unknownKey)}; only the keys 1 to 5 are allowed`,
+    );
+  }
+  return Object.freeze(counts);
 }
 
 /** "1 star", "3 stars". */
