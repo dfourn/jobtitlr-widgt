@@ -17,9 +17,11 @@ const tree = {
 
 function lockedTree(overrides: Record<string, string | Uint8Array | undefined> = {}): Record<string, string | Uint8Array> {
   const merged = { ...tree, 'review/contract.lock': serialiseLock(computeLock(memoryFs(tree))), ...overrides };
-  return Object.fromEntries(
-    Object.entries(merged).filter((entry): entry is [string, string | Uint8Array] => entry[1] !== undefined),
-  );
+  const files: Record<string, string | Uint8Array> = {};
+  for (const [path, content] of Object.entries(merged)) {
+    if (content !== undefined) files[path] = content;
+  }
+  return files;
 }
 
 describe('AC-L3 contract lock (G4)', () => {

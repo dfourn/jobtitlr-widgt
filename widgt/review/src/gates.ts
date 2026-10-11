@@ -27,16 +27,21 @@ export type ContractLock = Readonly<Record<string, string>>;
 
 /** Hashes every file in `scope` (sorted by path). Pure apart from reading `fs`. */
 export function computeLock(fs: ReadonlyFs, scope: LockScope = DEFAULT_LOCK_SCOPE): ContractLock {
-  void fs;
-  void scope;
-  void createHash;
-  throw new Error('not implemented');
+  const paths = new Set<string>(scope.dirs.flatMap((dir) => fs.listFiles(dir)));
+  for (const file of scope.files) {
+    if (fs.exists(file)) paths.add(file);
+  }
+  const lock: Record<string, string> = {};
+  for (const path of [...paths].sort()) {
+    lock[path] = createHash('sha256').update(fs.readBytes(path)).digest('hex');
+  }
+  return lock;
 }
 
 /** Serialises a lock as stable, diff-friendly JSON. */
 export function serialiseLock(lock: ContractLock): string {
-  void lock;
-  throw new Error('not implemented');
+  const sorted = Object.fromEntries(Object.entries(lock).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
+  return `${JSON.stringify(sorted, null, 2)}\n`;
 }
 
 /**
@@ -48,8 +53,55 @@ export function checkContractLock(
   lockFile: string = DEFAULT_LOCK_FILE,
   scope: LockScope = DEFAULT_LOCK_SCOPE,
 ): GateResult {
-  void fs;
-  void lockFile;
-  void scope;
-  throw new Error('not implemented');
+  const gate = (passed: boolean, detail: string): GateResult => ({ id: 'G4', name: 'Contract lock', passed, detail });
+  if (!fs.exists(lockFile)) {
+    return gate(false, `${lockFile} is missing; a human must run npm run review:lock`);
+  }
+  const expected = parseLock(fs.readText(lockFile));
+  if (expected === null) {
+    return gate(false, `${lockFile} is not valid lock JSON (path -> sha256)`);
+  }
+  const diff = diffLocks(expected, computeLock(fs, scope));
+  const parts = [
+    diff.changed.length > 0 ? `changed: ${diff.changed.join(', ')}` : '',
+    diff.added.length > 0 ? `added: ${diff.added.join(', ')}` : '',
+    diff.removed.length > 0 ? `removed: ${diff.removed.join(', ')}` : '',
+  ].filter((part) => part !== '');
+  return parts.length === 0
+    ? gate(true, `${String(Object.keys(expected).length)} locked files unchanged`)
+    : gate(false, `locked files differ from ${lockFile}; ${parts.join('; ')}`);
+}
+
+/** Parses lock JSON, returning `null` unless it is an object of string hashes. */
+export function parseLock(text: string): ContractLock | null {
+  let value: unknown;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return null;
+  }
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return null;
+  const entries: [string, unknown][] = Object.entries(value);
+  const lock: Record<string, string> = {};
+  for (const [path, hash] of entries) {
+    if (typeof hash !== 'string') return null;
+    lock[path] = hash;
+  }
+  return lock;
+}
+
+interface LockDiff {
+  readonly changed: readonly string[];
+  readonly added: readonly string[];
+  readonly removed: readonly string[];
+}
+
+function diffLocks(expected: ContractLock, actual: ContractLock): LockDiff {
+  const expectedPaths = Object.keys(expected);
+  const actualPaths = Object.keys(actual);
+  return {
+    changed: expectedPaths.filter((path) => path in actual && actual[path] !== expected[path]),
+    added: actualPaths.filter((path) => !(path in expected)),
+    removed: expectedPaths.filter((path) => !(path in actual)),
+  };
 }
