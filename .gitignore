@@ -17,3 +17,6 @@ test-results/
 
 # Private notes (interview prep and working log). Kept local and never committed.
 docs/notes/private/
+
+# Claude Code worktrees
+.claude/worktrees/
