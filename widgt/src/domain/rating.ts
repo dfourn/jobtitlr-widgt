@@ -48,3 +48,15 @@ export function starFills(score: number): StarFills {
   const fill = (star: number): number => Math.min(10, Math.max(0, tenths - (star - 1) * 10)) / 10;
   return [fill(1), fill(2), fill(3), fill(4), fill(5)];
 }
+
+/**
+ * One rating's share of all reviews, used as the bar length (A-W3: count / total, not count / max).
+ * @param count - Reviews for one star rating.
+ * @param total - All reviews.
+ * @returns A fraction in [0, 1]; 0 when there are no reviews (never NaN).
+ */
+export function shareOf(count: number, total: number): number {
+  void count;
+  void total;
+  throw new Error('not implemented');
+}

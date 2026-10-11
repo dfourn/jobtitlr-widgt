@@ -1,4 +1,4 @@
-import { averageOf, roundScore, starFills, totalOf, type StarFills } from './rating';
+import { averageOf, roundScore, shareOf, starFills, totalOf, type StarFills } from './rating';
 import type { RatingCounts } from './types';
 
 /** The data in the brief's reference design (B2.1). */
@@ -87,5 +87,21 @@ describe('starFills', () => {
 
   it('AC-2.2 fills no stars for a score of 0 (no reviews)', () => {
     expect(starFills(0)).toEqual([0, 0, 0, 0, 0]);
+  });
+});
+
+describe('shareOf', () => {
+  it.each<[number, number, number]>([
+    [952, 1232, 0.773],
+    [171, 1232, 0.139],
+    [40, 1232, 0.032],
+    [7, 7, 1],
+    [0, 7, 0],
+  ])('AC-1.3 gives %s of %s a share of about %s', (count, total, expected) => {
+    expect(shareOf(count, total)).toBeCloseTo(expected, 3);
+  });
+
+  it('AC-2.2 returns 0, not NaN, when there are no reviews', () => {
+    expect(shareOf(0, 0)).toBe(0);
   });
 });
