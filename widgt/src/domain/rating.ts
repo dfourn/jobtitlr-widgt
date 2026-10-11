@@ -22,9 +22,13 @@ export function averageOf(counts: RatingCounts): number | null {
 
 /**
  * Rounds an average to one decimal place, half-up (4.65 -> 4.7).
- * @param average - A mean star rating.
+ *
+ * Deliberately not `toFixed(1)`: that rounds the exact binary value, and
+ * 4.35 is stored as 4.34999…, so it gives "4.3". Multiplying by 10 rounds
+ * the product back onto 43.5 exactly, so `Math.round` sees the true half.
+ *
+ * @param average - A mean star rating (positive, so half-up and half-away-from-zero agree).
  */
 export function roundScore(average: number): number {
-  void average;
-  throw new Error('not implemented');
+  return Math.round(average * 10) / 10;
 }
