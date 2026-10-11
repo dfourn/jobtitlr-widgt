@@ -118,8 +118,8 @@ export const VISUAL_CEILING = 0.98;
  * floored at 0 (spec 03 §3).
  */
 export function axeScore(counts: AxeCounts): number {
-  void counts;
-  throw new Error('not implemented');
+  const penalty = 25 * counts.critical + 15 * counts.serious + 5 * counts.moderate + counts.minor;
+  return Math.max(0, 100 - penalty);
 }
 
 /**
@@ -127,6 +127,7 @@ export function axeScore(counts: AxeCounts): number {
  * 0.98 -> 100, clamped, one decimal place (spec 03 §3).
  */
 export function visualScore(similarity: number): number {
-  void similarity;
-  throw new Error('not implemented');
+  if (!Number.isFinite(similarity)) return 0;
+  const scaled = ((similarity - VISUAL_FLOOR) / (VISUAL_CEILING - VISUAL_FLOOR)) * 100;
+  return roundTo1(clamp(scaled, 0, 100));
 }
