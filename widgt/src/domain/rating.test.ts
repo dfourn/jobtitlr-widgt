@@ -5,6 +5,7 @@ import {
   shareOf,
   starFills,
   totalOf,
+  validateCounts,
   type StarFills,
 } from './rating';
 import type { RatingCounts } from './types';
@@ -129,5 +130,56 @@ describe('defaultLabelFor', () => {
     [1, 'Poor'],
   ])('AC-2.1 labels a score of %s as "%s" (A-W6 bands)', (score, expected) => {
     expect(defaultLabelFor(score)).toBe(expected);
+  });
+});
+
+describe('validateCounts', () => {
+  it.each<[string, RatingCounts]>([
+    ['the reference data', REFERENCE],
+    ['no reviews', NO_REVIEWS],
+  ])('AC-2.3 accepts %s and returns the same counts', (_name, counts) => {
+    expect(validateCounts(counts)).toEqual(counts);
+  });
+
+  it('AC-2.3 accepts counts parsed from JSON, where the keys are strings', () => {
+    const parsed: unknown = JSON.parse('{"5":952,"4":171,"3":55,"2":14,"1":40}');
+    expect(validateCounts(parsed)).toEqual(REFERENCE);
+  });
+
+  it('AC-2.3 returns a frozen copy, so later mutation of the input cannot leak in', () => {
+    const input = { 5: 1, 4: 2, 3: 3, 2: 4, 1: 5 };
+    const validated = validateCounts(input);
+    input[5] = 99;
+    expect(validated[5]).toBe(1);
+    expect(Object.isFrozen(validated)).toBe(true);
+  });
+
+  it.each<[string, unknown, RegExp]>([
+    ['a negative count', -1, /3 stars.*-1/],
+    ['NaN', Number.NaN, /3 stars.*NaN/],
+    ['a fraction', 1.5, /3 stars.*1\.5/],
+    ['Infinity', Number.POSITIVE_INFINITY, /3 stars.*Infinity/],
+    ['-Infinity', Number.NEGATIVE_INFINITY, /3 stars.*-Infinity/],
+    ['a numeric string', '5', /3 stars.*"5"/],
+    ['null', null, /3 stars.*null/],
+  ])('AC-2.3 throws a RangeError naming the star for %s', (_name, badCount, message) => {
+    const counts: unknown = { ...REFERENCE, 3: badCount };
+    expect(() => validateCounts(counts)).toThrow(RangeError);
+    expect(() => validateCounts(counts)).toThrow(message);
+  });
+
+  it('AC-2.3 throws a RangeError naming the star when a key is missing from untyped JSON', () => {
+    const parsed: unknown = JSON.parse('{"5":952,"4":171,"3":55,"2":14}');
+    expect(() => validateCounts(parsed)).toThrow(RangeError);
+    expect(() => validateCounts(parsed)).toThrow(/1 star\b.*missing/);
+  });
+
+  it.each<[string, unknown]>([
+    ['null', null],
+    ['undefined', undefined],
+    ['a number', 5],
+    ['an array', [0, 40, 14, 55, 171, 952]],
+  ])('AC-2.3 throws a TypeError when the input is %s rather than an object', (_name, input) => {
+    expect(() => validateCounts(input)).toThrow(TypeError);
   });
 });

@@ -75,3 +75,15 @@ const LABEL_BANDS: readonly { readonly min: number; readonly label: string }[] =
   { min: 3, label: 'Good' },
   { min: 2, label: 'Fair' },
 ];
+
+/**
+ * Checks counts that may come from untyped input (JSON, props from JS callers) and fails fast.
+ * @param input - Should be an object with a count for each of the keys 1 to 5.
+ * @returns A frozen copy holding only the five counts.
+ * @throws TypeError when `input` is not a plain object.
+ * @throws RangeError naming the star when a count is missing or is not a finite integer >= 0.
+ */
+export function validateCounts(input: unknown): RatingCounts {
+  void input;
+  throw new Error('not implemented');
+}
