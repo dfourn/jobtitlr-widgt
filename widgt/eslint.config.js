@@ -23,7 +23,7 @@ export default tseslint.config(
   },
   {
     // AC-7.3: the domain is plain TypeScript, so it can be tested and reused without React or Vite.
-    files: ['src/domain/**/*.ts'],
+    files: ['src/domain/**/*.{ts,tsx}'],
     rules: {
       'no-restricted-imports': [
         'error',
