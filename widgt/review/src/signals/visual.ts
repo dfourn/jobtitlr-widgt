@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, relative, sep } from 'node:path';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { visualScore } from '../score';
@@ -90,12 +90,16 @@ export interface VisualSignal {
  * writes `diff.png`, and maps similarity onto 0-100. Missing or unreadable
  * images produce `null` with a reason instead of throwing.
  */
-export function collectVisual(paths: { readonly screenshot: string; readonly reference: string; readonly diff: string }): VisualSignal {
+export function collectVisual(
+  paths: { readonly screenshot: string; readonly reference: string; readonly diff: string },
+  displayRoot: string | null = null,
+): VisualSignal {
+  const show = (path: string): string => (displayRoot === null ? path : relative(displayRoot, path).split(sep).join('/'));
   if (!existsSync(paths.reference)) {
-    return { value: null, similarity: null, detail: `reference not found: ${paths.reference}`, notes: [] };
+    return { value: null, similarity: null, detail: `reference not found: ${show(paths.reference)}`, notes: [] };
   }
   if (!existsSync(paths.screenshot)) {
-    return { value: null, similarity: null, detail: `screenshot not found: ${paths.screenshot}`, notes: [] };
+    return { value: null, similarity: null, detail: `screenshot not found: ${show(paths.screenshot)}`, notes: [] };
   }
   try {
     const result = compareImages(readPng(paths.screenshot), readPng(paths.reference));
