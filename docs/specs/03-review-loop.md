@@ -49,7 +49,7 @@ Judge (optional): `claude`, `glm` or `none`. When it is `none`, its weight is sp
 | Unit and component tests passing, and AC coverage (share of AC-1..7 IDs cited by at least one test in `src/`) | 15 | Vitest JSON reporter, plus a grep | B2.9 |
 | Accessibility: axe at WCAG 2.2 AA (`100 - 25·critical - 15·serious - 5·moderate - 1·minor`, floored at 0) in the default and selected states | 20 | @axe-core/playwright | B2.7, B2.8 |
 | Responsiveness at 320, 768 and 1280: no horizontal overflow, no clipped text, all 5 rows visible | 15 | Playwright DOM checks | B2.3 |
-| Visual similarity at 401px wide vs the reference | 10 | pixelmatch: `1 - diffPixels/totalPixels`, mapped linearly from 0.80 to 0.98 onto 0 to 100 | B2.2 |
+| Visual similarity: the widget's own screenshot (`visual-widget.png`, in the 360px `?visual=1` wrapper) vs the reference cropped to the card (360x405 at x 20, y 16), on foreground pixels only | 10 | pixelmatch (threshold 0.1, anti-aliasing forgiven) over the pixels that are ink in either image (mean of R, G, B below 245): foreground similarity `1 - different/foreground`, mapped linearly from 0.10 to 0.90 onto 0 to 100. Diagnostics, not scored: the card's `diff.png`, and for five regions (label, stars, score, brand, rows) the similarity and the best offset within ±8px | B2.2 |
 | AI judge rubric (component boundaries, readability, fidelity), the median of 3 samples | 15 | `review/rubric.json` | B2.4, B2.6 |
 
 ### Stopping
@@ -103,4 +103,5 @@ It never contains whole logs, and **never the judge's prose**, so the generator 
 - The reference is a 401x443 screenshot taken from a PDF, so pixel similarity is approximate. That is one reason its weight is low.
 - The AI judge can be lenient or inconsistent. It is capped at 15%, uses the median of 3 samples, and is never a gate.
 - Thresholds were tuned by hand.
+- Visual calibration (AC-L10): 0.10 -> 0 and 0.90 -> 100 on foreground similarity. Measured on throwaway pages in the Phase 0 planning pass: an empty bordered card and unstyled HTML 0.063, a hand-tuned copy 0.864, Arial instead of Poppins 0.617, the layout 4px lower 0.522. Measured on the reference itself: an all-white widget 0.114 (1.8 points, because the anti-aliased edges of the reference's text are forgiven even where the widget has no text), and the card moved 4px down 0.560. The ceiling comes from **one** hand-tuned copy, so it is to be revisited after Phase 3 iteration 1.
 - Unless fonts and rendering are pinned, screenshots can differ between operating systems. Reviews run in the same Chromium build, and baselines are not committed per OS.
