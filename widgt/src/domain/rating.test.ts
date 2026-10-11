@@ -1,4 +1,4 @@
-import { averageOf, roundScore, totalOf } from './rating';
+import { averageOf, roundScore, starFills, totalOf, type StarFills } from './rating';
 import type { RatingCounts } from './types';
 
 /** The data in the brief's reference design (B2.1). */
@@ -62,5 +62,20 @@ describe('roundScore', () => {
     const average = averageOf(counts);
     expect(average).not.toBeNull();
     expect(roundScore(average ?? Number.NaN)).toBe(expected);
+  });
+});
+
+describe('starFills', () => {
+  it.each<[number, StarFills]>([
+    [5, [1, 1, 1, 1, 1]],
+    [4, [1, 1, 1, 1, 0]],
+    [3, [1, 1, 1, 0, 0]],
+    [1, [1, 0, 0, 0, 0]],
+  ])('AC-1.4 fills whole stars for a score of %s', (score, expected) => {
+    expect(starFills(score)).toEqual(expected);
+  });
+
+  it('AC-2.2 fills no stars for a score of 0 (no reviews)', () => {
+    expect(starFills(0)).toEqual([0, 0, 0, 0, 0]);
   });
 });

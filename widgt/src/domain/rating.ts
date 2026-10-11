@@ -32,3 +32,16 @@ export function averageOf(counts: RatingCounts): number | null {
 export function roundScore(average: number): number {
   return Math.round(average * 10) / 10;
 }
+
+/** How full each of the five stars is, from star 1 to star 5. Each value is in [0, 1]. */
+export type StarFills = readonly [number, number, number, number, number];
+
+/**
+ * How full each star should be drawn for a score.
+ * Pass the **rounded** score so the stars always agree with the score text.
+ * @param score - A score from {@link roundScore}, or 0 when there are no reviews.
+ */
+export function starFills(score: number): StarFills {
+  void score;
+  throw new Error('not implemented');
+}
