@@ -1,4 +1,4 @@
-import { STAR_RATINGS, type RatingCounts } from './types';
+import { STAR_RATINGS, type RatingCounts, type StarRating } from './types';
 
 /**
  * Total number of reviews.
@@ -84,6 +84,27 @@ const LABEL_BANDS: readonly { readonly min: number; readonly label: string }[] =
  * @throws RangeError naming the star when a count is missing or is not a finite integer >= 0.
  */
 export function validateCounts(input: unknown): RatingCounts {
-  void input;
-  throw new Error('not implemented');
+  if (typeof input !== 'object' || input === null || Array.isArray(input)) {
+    throw new TypeError(`Rating counts must be an object keyed 1 to 5, got ${showValue(input)}`);
+  }
+  const fields = input as Readonly<Record<string, unknown>>;
+  const countFor = (star: StarRating): number => {
+    const stars = `${star} ${star === 1 ? 'star' : 'stars'}`;
+    if (!Object.hasOwn(fields, star)) {
+      throw new RangeError(`The count for ${stars} is missing`);
+    }
+    const value = fields[star];
+    if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+      throw new RangeError(
+        `The count for ${stars} must be a finite integer >= 0, got ${showValue(value)}`,
+      );
+    }
+    return value;
+  };
+  return Object.freeze({ 5: countFor(5), 4: countFor(4), 3: countFor(3), 2: countFor(2), 1: countFor(1) });
+}
+
+/** Renders a bad value for an error message: numbers as-is (NaN, -1), everything else as JSON ("5", null). */
+function showValue(value: unknown): string {
+  return typeof value === 'number' ? String(value) : (JSON.stringify(value) ?? String(value));
 }
