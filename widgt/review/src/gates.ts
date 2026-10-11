@@ -148,16 +148,29 @@ export function findForbiddenPatterns(
   dirs: readonly string[] = DEFAULT_SCAN_DIRS,
   patterns: readonly ForbiddenPattern[] = FORBIDDEN_PATTERNS,
 ): PatternViolation[] {
-  void fs;
-  void dirs;
-  void patterns;
-  void SCANNED_EXTENSIONS;
-  throw new Error('not implemented');
+  const violations: PatternViolation[] = [];
+  const files = dirs.flatMap((dir) => fs.listFiles(dir)).filter((file) => SCANNED_EXTENSIONS.test(file));
+  for (const file of files) {
+    fs.readText(file)
+      .split(/\r?\n/)
+      .forEach((text, index) => {
+        for (const pattern of patterns) {
+          if (pattern.regex.test(text)) violations.push({ file, line: index + 1, pattern: pattern.label });
+        }
+      });
+  }
+  return violations;
 }
 
 /** G5: no forbidden pattern in `src/` or `review/contract/` (AC-L4). */
 export function checkForbiddenPatterns(fs: ReadonlyFs, dirs: readonly string[] = DEFAULT_SCAN_DIRS): GateResult {
-  void fs;
-  void dirs;
-  throw new Error('not implemented');
+  const violations = findForbiddenPatterns(fs, dirs);
+  const shown = violations.slice(0, 5).map((v) => `${v.file}:${String(v.line)} ${v.pattern}`);
+  const more = violations.length > shown.length ? `, and ${String(violations.length - shown.length)} more` : '';
+  return {
+    id: 'G5',
+    name: 'Forbidden patterns',
+    passed: violations.length === 0,
+    detail: violations.length === 0 ? `none in ${dirs.join(', ')}` : `found ${shown.join(', ')}${more}`,
+  };
 }
