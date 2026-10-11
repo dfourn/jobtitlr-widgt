@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_WEIGHTS, score } from './score';
+import { axeScore, DEFAULT_WEIGHTS, score, visualScore } from './score';
 import type { GateId, GateResult, Signals } from './types';
 
 const passing: readonly GateResult[] = (['G1', 'G2', 'G3', 'G4', 'G5', 'G6'] as const).map((id) => ({
@@ -80,5 +80,36 @@ describe('AC-L2 score()', () => {
     { name: 'only the judge carrying weight', weights: { contract: 0, unit: 0, a11y: 0, responsive: 0, visual: 0, judge: 100 } },
   ])('AC-L2 rejects $name with a RangeError', ({ weights }) => {
     expect(() => score({ ...all(50), judge: null }, weights, passing)).toThrow(RangeError);
+  });
+});
+
+describe('AC-L2 signal mappings', () => {
+  it.each([
+    { counts: { critical: 0, serious: 0, moderate: 0, minor: 0 }, expected: 100 },
+    { counts: { critical: 1, serious: 0, moderate: 0, minor: 0 }, expected: 75 },
+    { counts: { critical: 0, serious: 1, moderate: 0, minor: 0 }, expected: 85 },
+    { counts: { critical: 0, serious: 0, moderate: 1, minor: 0 }, expected: 95 },
+    { counts: { critical: 0, serious: 0, moderate: 0, minor: 1 }, expected: 99 },
+    { counts: { critical: 1, serious: 2, moderate: 3, minor: 4 }, expected: 2 },
+    { counts: { critical: 4, serious: 0, moderate: 0, minor: 0 }, expected: 0 },
+    { counts: { critical: 3, serious: 3, moderate: 0, minor: 0 }, expected: 0 },
+  ])('AC-L2 axe critical=$counts.critical serious=$counts.serious moderate=$counts.moderate minor=$counts.minor scores $expected', ({ counts, expected }) => {
+    expect(axeScore(counts)).toBe(expected);
+  });
+
+  it.each([
+    { similarity: 0, expected: 0 },
+    { similarity: 0.8, expected: 0 },
+    { similarity: 0.89, expected: 50 },
+    { similarity: 0.935, expected: 75 },
+    { similarity: 0.98, expected: 100 },
+    { similarity: 1, expected: 100 },
+    { similarity: 0.85, expected: 27.8 },
+  ])('AC-L2 visual similarity $similarity maps to $expected', ({ similarity, expected }) => {
+    expect(visualScore(similarity)).toBe(expected);
+  });
+
+  it('AC-L2 a non-finite similarity maps to 0', () => {
+    expect(visualScore(Number.NaN)).toBe(0);
   });
 });

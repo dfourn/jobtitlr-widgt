@@ -99,3 +99,34 @@ export function clamp(value: number, min: number, max: number): number {
 function roundTo1(value: number): number {
   return Math.round(value * 10) / 10;
 }
+
+/** axe violation counts by impact. */
+export interface AxeCounts {
+  readonly critical: number;
+  readonly serious: number;
+  readonly moderate: number;
+  readonly minor: number;
+}
+
+/** Visual similarity at or below this maps to 0 (spec 03 §3). */
+export const VISUAL_FLOOR = 0.8;
+/** Visual similarity at or above this maps to 100 (spec 03 §3). */
+export const VISUAL_CEILING = 0.98;
+
+/**
+ * Accessibility signal: `100 - 25*critical - 15*serious - 5*moderate - 1*minor`,
+ * floored at 0 (spec 03 §3).
+ */
+export function axeScore(counts: AxeCounts): number {
+  void counts;
+  throw new Error('not implemented');
+}
+
+/**
+ * Visual signal: maps pixel similarity (0-1) linearly from 0.80 -> 0 to
+ * 0.98 -> 100, clamped, one decimal place (spec 03 §3).
+ */
+export function visualScore(similarity: number): number {
+  void similarity;
+  throw new Error('not implemented');
+}
