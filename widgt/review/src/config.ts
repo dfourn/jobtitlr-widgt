@@ -30,8 +30,12 @@ export interface ReviewPaths {
   readonly spec: string;
 }
 
-/** The screenshots the contract tests take, by file name. */
-export const SCREENSHOT_NAMES = ['visual-401', 'viewport-320', 'viewport-768', 'viewport-1280'] as const;
+/**
+ * The screenshots the contract tests take, by file name (see
+ * review/contract/visual.spec.ts): the 401px frame, the widget alone, and the
+ * full page at each viewport width.
+ */
+export const SCREENSHOT_NAMES = ['visual-401', 'visual-widget', 'page-320', 'page-768', 'page-1280'] as const;
 
 /** Default paths of spec 03 §4. */
 export function defaultPaths(latestDir = 'review/runs/latest'): ReviewPaths {
