@@ -34,7 +34,7 @@ export interface ProductRatingProps {
   counts: RatingCounts;                         // the only required input
   heading?: string;                             // default "Product Rating"
   locale?: string;                              // default "en-GB"
-  labelFor?: (average: number) => string;       // default bands (A-W6)
+  labelFor?: (score: number) => string;         // receives the rounded score; default bands (A-W6)
   selectedRating?: StarRating | null;           // controlled mode (optional)
   onRatingSelect?: (rating: StarRating | null) => void; // rows become toggles when set
 }
@@ -46,6 +46,8 @@ Usage:
 <ProductRating counts={{ 5: 952, 4: 171, 3: 55, 2: 14, 1: 40 }} onRatingSelect={setFilter} />
 ```
 
+Errors: the widget validates its counts and throws during render (fail fast, AC-2.3). It does not catch its own error. The host either validates at its data boundary with the exported `validateCounts`, or wraps the widget in an error boundary.
+
 ## 4. Domain rules (pure functions in `src/domain/rating.ts`, no React)
 
 | Function | Rule |
@@ -56,7 +58,7 @@ Usage:
 | `starFills(score)` | Five fractions in [0, 1]. Uses the **rounded** score so the stars and the text always agree: 4.6 -> `[1, 1, 1, 1, 0.6]`. |
 | `shareOf(count, total)` | count / total in [0, 1]. Returns 0 when total = 0 (A-W3). |
 | `defaultLabelFor(score)` | >= 4.5 Excellent · >= 4.0 Very good · >= 3.0 Good · >= 2.0 Fair · otherwise Poor (A-W6). |
-| `validateCounts(counts)` | Every count must be a finite integer >= 0. Otherwise throws `RangeError`, naming the offending star. |
+| `validateCounts(counts)` | The keys must be exactly 1-5, and every count a finite integer >= 0. A missing or unknown key, or an invalid count, throws a `RangeError` naming it. A non-object throws a `TypeError`. |
 
 ## 5. Acceptance criteria
 
@@ -70,8 +72,8 @@ Usage:
 ### AC-2 Domain logic (B2.5, B2.6)
 - **AC-2.1** The functions in section 4 behave as described there, including the rounding edge cases (x.x5 values, 5.0, 1.0).
 - **AC-2.2** With zero reviews, the widget shows "No reviews yet". No stars are filled, it does not divide by zero, and no NaN is rendered.
-- **AC-2.3** Invalid counts (negative, NaN, a fraction, Infinity) throw a `RangeError` (fail fast).
-- **AC-2.4** `labelFor` can be overridden.
+- **AC-2.3** Invalid counts (negative, NaN, a fraction, Infinity), or a missing or unknown key, throw a `RangeError` (fail fast).
+- **AC-2.4** `labelFor` can be overridden. It receives the rounded score, so the label matches the number shown.
 
 ### AC-3 Accessibility (B2.7, B2.8)
 - **AC-3.1** The widget is a `<section>` named "Product rating" (or named by its visible heading).
