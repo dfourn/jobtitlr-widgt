@@ -174,6 +174,14 @@ describe('AC-L7 prompts and the external generator', () => {
     expect(h.prompts.get(2)).toContain('Last score: 70 / 100');
   });
 
+  it('AC-L10 carries the visual region hint from the last review into the next prompt', async () => {
+    const h = harness([40, 92]);
+    const regions = [{ name: 'stars', similarity: 0.4, best: { dx: 0, dy: 4, similarity: 0.9 } }];
+    const deps: LoopDeps = { ...h.deps, review: (iteration) => h.deps.review(iteration).then((report) => ({ ...report, visualRegions: regions })) };
+    await runLoop(deps, options, initialState('fake'));
+    expect(h.prompts.get(1)).toContain("Visual: the weakest region is 'stars' (0.40)");
+  });
+
   it('AC-L7 hands off to an external agent and resumes where it left off', async () => {
     const h = harness([40, 70, 92], () => ({ kind: 'handoff' }));
     const first = await runLoop(h.deps, options, initialState('external'));
