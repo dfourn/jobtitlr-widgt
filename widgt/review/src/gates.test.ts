@@ -1,7 +1,17 @@
 // @vitest-environment node
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { checkContractLock, checkForbiddenPatterns, computeLock, findForbiddenPatterns, serialiseLock } from './gates';
+import {
+  checkContractLock,
+  checkForbiddenPatterns,
+  checkTestCount,
+  computeLock,
+  errorExcerpt,
+  findForbiddenPatterns,
+  runCommandGates,
+  serialiseLock,
+} from './gates';
+import type { CommandRunner, RunResult } from './io/runner';
 import { memoryFs } from './io/fs';
 
 const sha = (text: string): string => createHash('sha256').update(text).digest('hex');
@@ -119,5 +129,75 @@ describe('AC-L4 forbidden patterns (G5)', () => {
   it('AC-L4 ignores non-source files such as images and CSS', () => {
     const fs = memoryFs({ ...clean, 'src/notes.md': 'never use .only( here', 'src/a.css': '/* @ts-ignore */' });
     expect(checkForbiddenPatterns(fs).passed).toBe(true);
+  });
+});
+
+describe('AC-L4 test count never goes down (G6)', () => {
+  it.each([
+    { current: 12, previous: 10, passed: true, detail: '12 tests (was 10)' },
+    { current: 10, previous: 10, passed: true, detail: '10 tests (was 10)' },
+    { current: 9, previous: 10, passed: false, detail: '9 tests, down from 10 (-1)' },
+    { current: 0, previous: 3, passed: false, detail: '0 tests, down from 3 (-3)' },
+    { current: 4, previous: null, passed: true, detail: '4 tests (no previous run)' },
+    { current: null, previous: 4, passed: false, detail: 'unit test results are missing' },
+    { current: null, previous: null, passed: false, detail: 'unit test results are missing' },
+  ])('AC-L4 current=$current previous=$previous -> passed=$passed', ({ current, previous, passed, detail }) => {
+    expect(checkTestCount(current, previous)).toEqual({ id: 'G6', name: 'Test count', passed, detail });
+  });
+});
+
+describe('AC-L1 command gates (G1-G3)', () => {
+  function fakeRunner(results: Record<string, RunResult>): CommandRunner & { calls: string[] } {
+    const calls: string[] = [];
+    return {
+      calls,
+      run: (command, args) => {
+        const key = [command, ...args].join(' ');
+        calls.push(key);
+        return Promise.resolve(results[key] ?? { code: 0, stdout: '', stderr: '' });
+      },
+    };
+  }
+
+  it('AC-L1 runs typecheck, lint and build and passes on exit code 0', async () => {
+    const runner = fakeRunner({});
+    const gates = await runCommandGates(runner);
+    expect(runner.calls).toEqual(['npm run typecheck', 'npm run lint', 'npm run build']);
+    expect(gates.map((g) => [g.id, g.passed])).toEqual([
+      ['G1', true],
+      ['G2', true],
+      ['G3', true],
+    ]);
+  });
+
+  it('AC-L1 fails a gate on a non-zero exit, keeps running the others and keeps an excerpt', async () => {
+    const runner = fakeRunner({
+      'npm run lint': { code: 1, stdout: '\n/src/App.tsx\n  3:7  error  x is unused  no-unused-vars\n\n1 problem\n', stderr: '' },
+    });
+    const gates = await runCommandGates(runner);
+    expect(runner.calls).toHaveLength(3);
+    const lint = gates[1];
+    expect(lint).toMatchObject({ id: 'G2', passed: false, detail: 'npm run lint exited with 1' });
+    expect(lint?.excerpt).toEqual(['3:7  error  x is unused  no-unused-vars']);
+  });
+});
+
+describe('AC-L1 errorExcerpt()', () => {
+  const esc = String.fromCharCode(27);
+
+  it('AC-L1 keeps only lines that mention errors, without colours', () => {
+    const output = `> tsc\n${esc}[31msrc/a.ts(1,7): error TS2322: Type 'string' is not assignable${esc}[0m\nok line\n`;
+    expect(errorExcerpt(output)).toEqual(["src/a.ts(1,7): error TS2322: Type 'string' is not assignable"]);
+  });
+
+  it('AC-L1 falls back to the last non-empty lines when nothing mentions an error', () => {
+    expect(errorExcerpt('a\nb\n\nc\nd\n', 2)).toEqual(['c', 'd']);
+  });
+
+  it('AC-L1 caps the number of lines and truncates long lines to 200 characters', () => {
+    const output = Array.from({ length: 9 }, (_, i) => `error ${String(i)} ${'x'.repeat(300)}`).join('\n');
+    const excerpt = errorExcerpt(output, 3);
+    expect(excerpt).toHaveLength(3);
+    expect(excerpt.every((line) => line.length <= 200)).toBe(true);
   });
 });

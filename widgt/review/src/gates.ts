@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { ReadonlyFs } from './io/fs';
-import type { GateResult } from './types';
+import type { CommandRunner } from './io/runner';
+import type { GateId, GateResult } from './types';
 
 /** What the contract lock (G4) covers. Paths are relative to the widgt root. */
 export interface LockScope {
@@ -173,4 +174,56 @@ export function checkForbiddenPatterns(fs: ReadonlyFs, dirs: readonly string[] =
     passed: violations.length === 0,
     detail: violations.length === 0 ? `none in ${dirs.join(', ')}` : `found ${shown.join(', ')}${more}`,
   };
+}
+
+/**
+ * G6: the number of unit and component tests in `src/` has not gone down
+ * since the previous run, so deleting tests cannot make the suite pass.
+ * `current` is `null` when the test results could not be read.
+ */
+export function checkTestCount(current: number | null, previous: number | null): GateResult {
+  void current;
+  void previous;
+  throw new Error('not implemented');
+}
+
+/** A gate that passes when a command exits with 0. */
+export interface CommandGate {
+  readonly id: GateId;
+  readonly name: string;
+  readonly command: string;
+  readonly args: readonly string[];
+}
+
+/** G1-G3 of spec 03. */
+export const COMMAND_GATES: readonly CommandGate[] = [
+  { id: 'G1', name: 'TypeScript', command: 'npm', args: ['run', 'typecheck'] },
+  { id: 'G2', name: 'ESLint', command: 'npm', args: ['run', 'lint'] },
+  { id: 'G3', name: 'Build', command: 'npm', args: ['run', 'build'] },
+];
+
+/** A gate result plus a few lines of the command's output, for the report. */
+export interface CommandGateResult extends GateResult {
+  readonly excerpt: readonly string[];
+}
+
+/** Runs G1-G3 one after the other. Each gate runs even if an earlier one failed. */
+export async function runCommandGates(
+  runner: CommandRunner,
+  gates: readonly CommandGate[] = COMMAND_GATES,
+): Promise<CommandGateResult[]> {
+  void runner;
+  void gates;
+  return Promise.reject(new Error('not implemented'));
+}
+
+/**
+ * The few lines of a command's output worth showing: lines that mention an
+ * error, else the last lines. ANSI colours are stripped and lines truncated,
+ * because spec 03 §5 forbids feeding whole logs back to the generator.
+ */
+export function errorExcerpt(output: string, maxLines = 5): string[] {
+  void output;
+  void maxLines;
+  throw new Error('not implemented');
 }
