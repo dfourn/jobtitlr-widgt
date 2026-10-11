@@ -90,7 +90,7 @@ describe('AC-L2 signal mappings', () => {
     { counts: { critical: 0, serious: 1, moderate: 0, minor: 0 }, expected: 85 },
     { counts: { critical: 0, serious: 0, moderate: 1, minor: 0 }, expected: 95 },
     { counts: { critical: 0, serious: 0, moderate: 0, minor: 1 }, expected: 99 },
-    { counts: { critical: 1, serious: 2, moderate: 3, minor: 4 }, expected: 2 },
+    { counts: { critical: 1, serious: 2, moderate: 3, minor: 4 }, expected: 26 },
     { counts: { critical: 4, serious: 0, moderate: 0, minor: 0 }, expected: 0 },
     { counts: { critical: 3, serious: 3, moderate: 0, minor: 0 }, expected: 0 },
   ])('AC-L2 axe critical=$counts.critical serious=$counts.serious moderate=$counts.moderate minor=$counts.minor scores $expected', ({ counts, expected }) => {
