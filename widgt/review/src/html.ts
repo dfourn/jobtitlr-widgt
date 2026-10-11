@@ -64,7 +64,7 @@ ${newestFirst.map((it) => renderIteration(it, model.reference)).join('\n')}
 `;
 }
 
-const CHART = { width: 720, height: 260, left: 44, right: 72, top: 16, bottom: 34 } as const;
+const CHART = { width: 720, height: 260, left: 44, right: 72, top: 28, bottom: 34 } as const;
 
 function renderChart(model: IndexModel): string {
   const plotW = CHART.width - CHART.left - CHART.right;
@@ -83,7 +83,7 @@ function renderChart(model: IndexModel): string {
     .join('');
   const target =
     `<line class="target" x1="${fmt(CHART.left)}" x2="${fmt(CHART.left + plotW)}" y1="${fmt(y(model.target))}" y2="${fmt(y(model.target))}"/>` +
-    `<text class="axis" x="${fmt(CHART.left + plotW + 6)}" y="${fmt(y(model.target) + 4)}">target ${String(model.target)}</text>`;
+    `<text class="axis" x="${fmt(CHART.left + plotW + 8)}" y="${fmt(y(model.target) + 4)}">target ${String(model.target)}</text>`;
   const labelEvery = Math.max(1, Math.ceil(count / 12));
   const xLabels = model.iterations
     .map((it, i) =>
@@ -103,7 +103,7 @@ function renderChart(model: IndexModel): string {
         `<g class="pt-g"><title>${escapeHtml(label)}</title>` +
         `<circle class="hit" cx="${fmt(x(i))}" cy="${fmt(y(it.total))}" r="12"/>` +
         `<circle class="pt${it.gatesPassed ? '' : ' failed'}" cx="${fmt(x(i))}" cy="${fmt(y(it.total))}" r="5"/>` +
-        `<text class="val" x="${fmt(x(i))}" y="${fmt(y(it.total) - 12)}" text-anchor="middle">${it.total.toFixed(1)}${it.gatesPassed ? '' : ' gate failed'}</text></g>`
+        `<text class="val" x="${fmt(x(i))}" y="${fmt(y(it.total) - 12)}" text-anchor="${labelAnchor(i, count)}">${it.total.toFixed(1)}${it.gatesPassed ? '' : ' gate failed'}</text></g>`
       );
     })
     .join('');
@@ -111,6 +111,13 @@ function renderChart(model: IndexModel): string {
 <figcaption><strong>Total score per iteration</strong> <span class="muted">(0-100; hollow points failed a gate and score 0)</span></figcaption>
 <svg viewBox="0 0 ${String(CHART.width)} ${String(CHART.height)}" role="img" aria-label="Line chart of the total score per iteration">${grid}${target}${xLabels}<path class="line" d="${path}"/>${points}</svg>
 </figure>`;
+}
+
+/** Keeps value labels inside the plot: the first reads rightwards, the last leftwards. */
+function labelAnchor(index: number, count: number): string {
+  if (count === 1) return 'middle';
+  if (index === 0) return 'start';
+  return index === count - 1 ? 'end' : 'middle';
 }
 
 function renderTable(iterations: readonly IndexIteration[]): string {
@@ -184,7 +191,7 @@ h2{font-size:1.15rem;margin:0 0 4px;display:flex;align-items:baseline;gap:12px}
 .muted{color:var(--muted)}.small{font-size:.85rem}
 code{font:.85em ui-monospace,SFMono-Regular,Menlo,monospace}
 .card{background:var(--surface);border:1px solid var(--grid);border-radius:10px;padding:16px;margin:16px 0}
-.chart svg{width:100%;height:auto;display:block}
+.chart{overflow-x:auto}.chart svg{width:100%;min-width:520px;height:auto;display:block}
 .grid{stroke:var(--grid);stroke-width:1}
 .target{stroke:var(--muted);stroke-width:1}
 .axis{fill:var(--muted);font-size:11px}
@@ -199,12 +206,12 @@ code{font:.85em ui-monospace,SFMono-Regular,Menlo,monospace}
 table{border-collapse:collapse;width:100%;font-size:.85rem}
 caption{text-align:left;font-weight:600;padding-bottom:8px}
 th,td{padding:6px 8px;border-bottom:1px solid var(--grid);text-align:left;white-space:nowrap}
-td:last-child{white-space:normal;min-width:16ch}
+td:last-child{white-space:normal;min-width:28ch}
 .num{text-align:right;font-variant-numeric:tabular-nums}
 a{color:var(--series)}
 .fail{color:var(--fail);background:var(--fail-bg);border-radius:4px;padding:0 4px}
 .chips{list-style:none;padding:0;margin:8px 0 12px;display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.85rem}
-.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
 figure{margin:0}
 .gallery img,.missing{width:100%;border:1px solid var(--grid);border-radius:6px;background:#fff}
 .gallery img{display:block;height:auto}
