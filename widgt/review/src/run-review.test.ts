@@ -3,7 +3,7 @@ import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { defaultPaths } from './config';
+import { defaultPaths, type ReviewPaths } from './config';
 import { computeLock, serialiseLock } from './gates';
 import { nodeFs } from './io/fs';
 import type { CommandRunner } from './io/runner';
@@ -127,13 +127,14 @@ describe('AC-L1 runReview()', () => {
   async function review(
     rendered = true,
     tools: Partial<FakeToolsOptions> = {},
+    paths: ReviewPaths = defaultPaths(),
   ): Promise<{ report: ReviewReport; calls: string[]; seenAtE2e: Map<string, boolean> }> {
     const calls: string[] = [];
     const seenAtE2e = new Map<string, boolean>();
     const options: FakeToolsOptions = { rendered, captured: true, forge: false, e2eWritesNothing: false, seenAtE2e, ...tools };
     const report = await runReview(
       { root, fs: nodeFs(root), runner: fakeTools(root, calls, options), judge: new NoJudge(), now: () => new Date('2026-10-11T12:00:00Z'), log: () => undefined },
-      { paths: defaultPaths(), iteration: null, baselineReport: 'review/runs/latest/report.json' },
+      { paths, iteration: null, baselineReport: 'review/runs/latest/report.json' },
     );
     return { report, calls, seenAtE2e };
   }
@@ -194,6 +195,15 @@ describe('AC-L1 runReview()', () => {
   ])('$ac a forged $file is gone before the contract tests run', async ({ file }) => {
     const { seenAtE2e } = await review(true, { forge: true });
     expect(seenAtE2e.get(file)).toBe(false);
+  });
+
+  it('AC-L9 never deletes results the command line points at outside the run folder', async () => {
+    const saved = { axe: join(root, 'saved', 'axe', 'default.json'), results: join(root, 'saved', 'results.json') };
+    mkdirSync(join(root, 'saved', 'axe'), { recursive: true });
+    writeFileSync(saved.axe, JSON.stringify({ state: 'default', violations: [] }));
+    writeFileSync(saved.results, JSON.stringify({ suites: [] }));
+    await review(true, {}, { ...defaultPaths(), axeDir: 'saved/axe', contractResults: 'saved/results.json' });
+    expect([existsSync(saved.axe), existsSync(saved.results)]).toEqual([true, true]);
   });
 
   it('AC-L9 an axe result forged by a unit test does not score when the contract tests write none', async () => {
