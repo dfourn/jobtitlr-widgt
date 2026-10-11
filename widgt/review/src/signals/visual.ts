@@ -3,6 +3,7 @@ import { dirname, relative, sep } from 'node:path';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 import { visualScore } from '../score';
+import type { RegionDiagnostic } from '../types';
 
 /** An RGBA bitmap, 4 bytes per pixel, row-major. */
 export interface RgbaImage {
@@ -147,6 +148,71 @@ export function compareImages(actual: RgbaImage, reference: RgbaImage): ImageCom
   };
 }
 
+/** A named part of the reference card, in card coordinates. */
+export interface VisualRegion {
+  readonly name: string;
+  readonly box: Box;
+}
+
+/**
+ * The parts of the card the diagnostics look at: the reference's ink bands
+ * with a 4 px margin (AC-L10). Each leaves room for the offset search.
+ */
+export const VISUAL_REGIONS: readonly VisualRegion[] = [
+  { name: 'label', box: { x: 106, y: 42, width: 145, height: 25 } },
+  { name: 'stars', box: { x: 58, y: 81, width: 244, height: 52 } },
+  { name: 'score', box: { x: 121, y: 145, width: 115, height: 19 } },
+  { name: 'brand', box: { x: 58, y: 178, width: 244, height: 35 } },
+  { name: 'rows', box: { x: 18, y: 252, width: 324, height: 134 } },
+];
+
+/** How far, in px, the region diagnostics search for a better fit in each direction. */
+export const REGION_SEARCH = 8;
+
+/** The `width` x `height` window of `image` at (x, y); pixels outside `image` are white. */
+function windowAt(image: RgbaImage, x: number, y: number, width: number, height: number): RgbaImage {
+  const data = new Uint8Array(width * height * 4).fill(255);
+  const left = Math.max(0, x);
+  const right = Math.min(image.width, x + width);
+  if (right > left) {
+    for (let row = Math.max(0, y); row < Math.min(image.height, y + height); row += 1) {
+      const start = (row * image.width + left) * 4;
+      data.set(image.data.subarray(start, start + (right - left) * 4), ((row - y) * width + (left - x)) * 4);
+    }
+  }
+  return { width, height, data };
+}
+
+/**
+ * Per-region diagnostics (AC-L10, not scored): each region's foreground
+ * similarity at the reference position, and the offset within
+ * ±{@link REGION_SEARCH} px where the candidate matches it best. `candidate`
+ * must already have the card's size.
+ */
+export function regionDiagnostics(
+  candidate: RgbaImage,
+  card: RgbaImage,
+  regions: readonly VisualRegion[] = VISUAL_REGIONS,
+  search = REGION_SEARCH,
+): RegionDiagnostic[] {
+  return regions.map(({ name, box }) => {
+    const target = windowAt(card, box.x, box.y, box.width, box.height);
+    const at = (dx: number, dy: number): number =>
+      foregroundSimilarity(windowAt(candidate, box.x + dx, box.y + dy, box.width, box.height), target).similarity;
+    const similarity = at(0, 0);
+    let best = { dx: 0, dy: 0, similarity };
+    for (let dy = -search; dy <= search; dy += 1) {
+      for (let dx = -search; dx <= search; dx += 1) {
+        if (dx === 0 && dy === 0) continue;
+        const value = at(dx, dy);
+        const closer = Math.abs(dx) + Math.abs(dy) < Math.abs(best.dx) + Math.abs(best.dy);
+        if (value > best.similarity || (value === best.similarity && closer)) best = { dx, dy, similarity: value };
+      }
+    }
+    return { name, similarity, best };
+  });
+}
+
 /** Reads a PNG file into an {@link RgbaImage}. */
 export function readPng(path: string): RgbaImage {
   const png = PNG.sync.read(readFileSync(path));
@@ -166,6 +232,8 @@ export interface VisualSignal {
   readonly similarity: number | null;
   readonly detail: string;
   readonly notes: readonly string[];
+  /** Region diagnostics, or `null` when the images could not be compared. */
+  readonly regions: readonly RegionDiagnostic[] | null;
 }
 
 /**
@@ -180,23 +248,25 @@ export function collectVisual(
 ): VisualSignal {
   const show = (path: string): string => (displayRoot === null ? path : relative(displayRoot, path).split(sep).join('/'));
   if (!existsSync(paths.reference)) {
-    return { value: null, similarity: null, detail: `reference not found: ${show(paths.reference)}`, notes: [] };
+    return { value: null, similarity: null, detail: `reference not found: ${show(paths.reference)}`, notes: [], regions: null };
   }
   if (!existsSync(paths.screenshot)) {
-    return { value: null, similarity: null, detail: `screenshot not found: ${show(paths.screenshot)}`, notes: [] };
+    return { value: null, similarity: null, detail: `screenshot not found: ${show(paths.screenshot)}`, notes: [], regions: null };
   }
   try {
     const card = crop(readPng(paths.reference), REFERENCE_CARD, 'the reference');
-    const result = compareImages(readPng(paths.screenshot), card);
+    const screenshot = readPng(paths.screenshot);
+    const result = compareImages(screenshot, card);
     writePng(paths.diff, result.diff);
     return {
       value: visualScore(result.similarity),
       similarity: result.similarity,
       detail: `foreground similarity ${(result.similarity * 100).toFixed(1)}% (${String(result.differentPixels)} of ${String(result.foregroundPixels)} foreground pixels differ)`,
       notes: result.note === null ? [] : [result.note],
+      regions: regionDiagnostics(fitToSize(screenshot, card.width, card.height).image, card),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return { value: null, similarity: null, detail: `could not compare images: ${message}`, notes: [] };
+    return { value: null, similarity: null, detail: `could not compare images: ${message}`, notes: [], regions: null };
   }
 }

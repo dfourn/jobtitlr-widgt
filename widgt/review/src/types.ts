@@ -40,3 +40,16 @@ export interface Failure {
   readonly file: string | null;
   readonly message: string;
 }
+
+/** Visual diagnostics for one region of the reference card (AC-L10). Not scored. */
+export interface RegionDiagnostic {
+  readonly name: string;
+  /** Foreground similarity of the region at the reference position. */
+  readonly similarity: number;
+  /**
+   * The offset within ±8 px at which the region matches best: the candidate's
+   * content sits at the reference position plus (dx, dy), so (0, 4) means 4 px
+   * lower. Ties go to the smallest shift.
+   */
+  readonly best: { readonly dx: number; readonly dy: number; readonly similarity: number };
+}
