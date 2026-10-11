@@ -42,12 +42,21 @@ export const DEFAULT_LOCK_SCOPE: LockScope = {
 
 export const DEFAULT_LOCK_FILE = 'review/contract.lock';
 
+/**
+ * File names operating systems drop into folders on their own (macOS Finder, Windows Explorer).
+ * They are never tracked, so hashing them would fail G4 on one machine and not another. Exactly
+ * these names are skipped; any other file in a locked folder, dotfiles included, is locked.
+ */
+export const OS_JUNK_FILES: readonly string[] = ['.DS_Store', 'Thumbs.db'];
+
+const isOsJunk = (path: string): boolean => OS_JUNK_FILES.includes(path.slice(path.lastIndexOf('/') + 1));
+
 /** A lock: POSIX path -> sha256 hex digest, with keys sorted. */
 export type ContractLock = Readonly<Record<string, string>>;
 
-/** Hashes every file in `scope` (sorted by path). Pure apart from reading `fs`. */
+/** Hashes every file in `scope` but OS junk ({@link OS_JUNK_FILES}), sorted by path. Pure apart from reading `fs`. */
 export function computeLock(fs: ReadonlyFs, scope: LockScope = DEFAULT_LOCK_SCOPE): ContractLock {
-  const paths = new Set<string>(scope.dirs.flatMap((dir) => fs.listFiles(dir)));
+  const paths = new Set<string>(scope.dirs.flatMap((dir) => fs.listFiles(dir)).filter((path) => !isOsJunk(path)));
   for (const file of scope.files) {
     if (fs.exists(file)) paths.add(file);
   }
