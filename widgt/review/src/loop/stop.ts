@@ -30,8 +30,34 @@ export type StopDecision =
  * 90 on its last allowed iteration is reported as done.
  */
 export function shouldStop(history: readonly IterationScore[], spentUsd: number, options: StopOptions): StopDecision {
-  void history;
-  void spentUsd;
-  void options;
-  throw new Error('not implemented');
+  const last = history.at(-1);
+  if (last === undefined) return { stop: false };
+  const delta = options.plateauDelta ?? 1;
+  const runs = options.plateauRuns ?? 2;
+
+  if (last.gatesPassed && last.total >= options.target) {
+    return stop('target', `target reached: ${String(last.total)} >= ${String(options.target)} with every gate passing`);
+  }
+  if (options.maxBudgetUsd !== null && spentUsd >= options.maxBudgetUsd) {
+    return stop('budget', `budget spent: $${spentUsd.toFixed(2)} of $${options.maxBudgetUsd.toFixed(2)}`);
+  }
+  const generated = history.filter((entry) => entry.iteration > 0).length;
+  if (generated >= options.maxIter) {
+    return stop('max-iter', `max-iter reached: ${String(generated)} iterations`);
+  }
+  if (isPlateau(history.map((entry) => entry.total), delta, runs)) {
+    return stop('plateau', `plateau: less than ${String(delta)} point${delta === 1 ? '' : 's'} gained in each of the last ${String(runs)} iterations`);
+  }
+  return { stop: false };
+}
+
+function stop(reason: StopReason, message: string): StopDecision {
+  return { stop: true, reason, message };
+}
+
+/** True when each of the last `runs` steps gained less than `delta`. */
+function isPlateau(totals: readonly number[], delta: number, runs: number): boolean {
+  if (totals.length < runs + 1) return false;
+  const recent = totals.slice(-(runs + 1));
+  return recent.slice(1).every((total, index) => total - (recent[index] ?? total) < delta);
 }
