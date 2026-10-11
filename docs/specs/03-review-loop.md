@@ -94,6 +94,10 @@ It never contains whole logs, and **never the judge's prose**, so the generator 
 - **AC-L5** The loop stops on each stop condition (tested with a fake generator and a fake review).
 - **AC-L6** Each iteration produces a commit, and a row in the scoreboard.
 - **AC-L7** Generator adapters can be swapped through `--generator`. The `external` adapter is enough for a full run.
+- **AC-L8** The a11y, responsive and visual signals score 0, with a reason, unless every AC-1.1 and AC-1.2 contract test passed (the widget-presence precondition).
+- **AC-L9** The a11y signal is the mean of per-state axe scores over the expected states (default, static, selected). A missing or unreadable state scores 0 and is named.
+- **AC-L10** The visual signal compares the widget's screenshot with the reference card on foreground pixels only.
+- **AC-L11** Unit AC coverage counts only AC IDs cited by passing unit tests, over the unit-testable IDs of spec 02 (AC-1.x, AC-2.x, AC-3.1-3.5, AC-4.1-4.6).
 
 ## 8. Known limitations (to discuss)
 - The reference is a 401x443 screenshot taken from a PDF, so pixel similarity is approximate. That is one reason its weight is low.
