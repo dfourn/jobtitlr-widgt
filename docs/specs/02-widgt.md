@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Draft - awaiting review** |
+| Status | **Accepted** |
 | Project | `widgt/` |
 | Stack | React 19, TypeScript (strict), Vite, CSS Modules, Vitest, Testing Library, Playwright |
 | Brief | Part 2 (`docs/brief/README.md`, B2.1-B2.17) |
@@ -107,7 +107,7 @@ Errors: the widget validates its counts and throws during render (fail fast, AC-
 ### AC-7 Code quality (B2.4, B2.5, B2.6)
 - **AC-7.1** TypeScript `strict`, with no `any` and no non-null `!` assertions in `src/`.
 - **AC-7.2** ESLint passes with no warnings.
-- **AC-7.3** Domain logic lives in `src/domain/`. Components hold no arithmetic beyond formatting.
+- **AC-7.3** Domain logic lives in `src/domain/`. Components hold no arithmetic beyond formatting. ESLint keeps React (`react`, `react-dom` and their subpaths) and `import.meta` out of `src/domain/`.
 - **AC-7.4** Every component has typed props and lives in its own folder with its CSS Module and tests.
 
 ### AC-8 Delivery (B2.13, B2.15)
