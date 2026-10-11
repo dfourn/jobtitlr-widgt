@@ -42,6 +42,9 @@ export type StarFills = readonly [number, number, number, number, number];
  * @param score - A score from {@link roundScore}, or 0 when there are no reviews.
  */
 export function starFills(score: number): StarFills {
-  const fill = (star: number): number => Math.min(1, Math.max(0, score - (star - 1)));
+  // Work in whole tenths: 4.6 - 4 is 0.5999999999999996 in floating point,
+  // but 46 - 40 = 6 is exact, and 6 / 10 is the double closest to 0.6.
+  const tenths = Math.round(score * 10);
+  const fill = (star: number): number => Math.min(10, Math.max(0, tenths - (star - 1) * 10)) / 10;
   return [fill(1), fill(2), fill(3), fill(4), fill(5)];
 }
