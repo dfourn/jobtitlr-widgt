@@ -1,7 +1,10 @@
 // @vitest-environment node
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { WIDGT_ROOT } from '../config';
 import type { ContractCase, ContractResults } from './contract';
-import { widgetPresence, widgetPresent } from './presence';
+import { WIDGET_CAPTURE_TITLE, widgetCapture, widgetPresence, widgetPresent } from './presence';
 
 function contractCase(title: string, passed: boolean, describe: readonly string[] = []): ContractCase {
   return { titlePath: [...describe, title], file: 'review/contract/rendering.spec.ts', line: 1, passed, message: passed ? '' : 'x' };
@@ -46,5 +49,37 @@ describe('AC-L8 the widget-presence precondition', () => {
   it('AC-L8 the widget is absent when the contract results are missing', () => {
     expect(widgetPresent(null)).toBe(false);
     expect(widgetPresence(null).reason).toBe('the widget is not rendered (contract results not found)');
+  });
+});
+
+describe('AC-L10 the widget screenshot is scored only after its capture test passed', () => {
+  const capture = (passed: boolean) =>
+    contractCase('AC-6.3 captures the widget in its 360px wrapper for the similarity score', passed, ['AC-6 visual fidelity', 'at the reference width']);
+  const pageShot = contractCase('AC-6.3 captures a full-page screenshot at 320px', true, ['AC-6 visual fidelity']);
+
+  it('AC-L10 the capture is trusted when the widget-capture test passed', () => {
+    expect(widgetCapture(results(capture(true), pageShot))).toEqual({ present: true, reason: '' });
+  });
+
+  it('AC-L10 the capture is not trusted when the widget-capture test failed', () => {
+    expect(widgetCapture(results(capture(false), pageShot))).toEqual({
+      present: false,
+      reason: 'the widget capture is not trusted (the AC-6.3 widget-capture contract test failed)',
+    });
+  });
+
+  it.each([
+    { name: 'only the full-page captures ran', contract: results(pageShot) },
+    { name: 'the contract results are missing', contract: null },
+  ])('AC-L10 the capture is not trusted when $name', ({ contract }) => {
+    expect(widgetCapture(contract)).toEqual({
+      present: false,
+      reason: 'the widget capture is not trusted (no AC-6.3 widget-capture contract test ran)',
+    });
+  });
+
+  it('AC-L10 the title prefix names exactly one test in the contract', () => {
+    const spec = readFileSync(join(WIDGT_ROOT, 'review', 'contract', 'visual.spec.ts'), 'utf8');
+    expect(spec.split(`test('${WIDGET_CAPTURE_TITLE}`)).toHaveLength(2);
   });
 });

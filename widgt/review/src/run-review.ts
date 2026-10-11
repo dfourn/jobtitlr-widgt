@@ -11,7 +11,7 @@ import { DEFAULT_WEIGHTS, score } from './score';
 import { axeSignal, readAxeStates } from './signals/axe';
 import { contractSignal, parsePlaywrightReport, responsiveSignal } from './signals/contract';
 import { acCoverage } from './signals/coverage';
-import { requirePresence, widgetPresence } from './signals/presence';
+import { requirePresence, widgetCapture, widgetPresence } from './signals/presence';
 import { parseVitestReport, unitPassRate } from './signals/unit';
 import { collectVisual } from './signals/visual';
 import { GATE_IDS, SIGNAL_KEYS, type SignalKey, type Signals } from './types';
@@ -57,6 +57,9 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   log('unit and component tests (vitest)');
   await runner.run('npx', ['--no-install', 'vitest', 'run', '--reporter=json', `--outputFile=${abs(root, paths.vitestResults)}`]);
 
+  // Vitest runs generator-owned tests in Node, which can write files: clear what Playwright writes and the score reads.
+  clearContractOutputs(root, paths);
+
   log('contract tests (npm run test:e2e)');
   const e2e = await runner.run('npm', ['run', 'test:e2e'], { env: { REVIEW_RUN_DIR: abs(root, paths.latestDir) } });
   if (/missing script/i.test(`${e2e.stdout}\n${e2e.stderr}`)) {
@@ -73,14 +76,17 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   const presence = widgetPresence(contractResults);
   const a11y = requirePresence(presence, axeSignal(readAxeStates(fs, paths.axeDir), paths.axeDir));
   const responsive = requirePresence(presence, responsiveSignal(contractResults));
+  // AC-L10: the widget screenshot counts only when the AC-6.3 capture test, with its anti-cheat checks, passed.
+  const captured = widgetCapture(contractResults);
+  const scoreable = presence.present ? captured : presence;
   const visualPaths = {
     screenshot: abs(root, paths.visualScreenshot),
     reference: abs(root, paths.reference),
     diff: abs(root, paths.diff),
   };
-  const collected = collectVisual(visualPaths, root);
-  notes.push(...collected.notes);
-  const visual = requirePresence(presence, collected);
+  const collected = scoreable.present ? collectVisual(visualPaths, root) : null;
+  notes.push(...(collected?.notes ?? []));
+  const visual = requirePresence(scoreable, collected ?? { value: null, detail: 'not collected' });
 
   const judged = await runJudge(deps, paths);
   if (judged !== null) {
@@ -137,13 +143,26 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
     testCount: unitRate.testCount,
     contract: contractResults === null ? null : { passed: contract.passed, total: contract.total },
     judgeScores: judged === null || judged.score === null ? null : judged.criteria,
-    visualRegions: presence.present ? collected.regions : null,
+    visualRegions: collected?.regions ?? null,
     failures: rankFailures([...contract.failures, ...unitRate.failures]),
     notes,
   };
   writeFileSync(abs(root, `${paths.latestDir}/report.json`), `${JSON.stringify(report, null, 2)}\n`);
   writeFileSync(abs(root, `${paths.latestDir}/report.md`), renderReportMarkdown(report));
   return report;
+}
+
+/**
+ * Removes what the contract tests write and the score reads (spec 03 §4), after Vitest and before
+ * Playwright, so a file left by a unit test cannot pass for a contract output: the axe results, the
+ * screenshots and Playwright's JSON report (deleted too, in case Playwright fails to start).
+ */
+function clearContractOutputs(root: string, paths: ReviewPaths): void {
+  for (const dir of [paths.axeDir, paths.screenshotsDir]) {
+    rmSync(abs(root, dir), { recursive: true, force: true });
+    mkdirSync(abs(root, dir), { recursive: true });
+  }
+  rmSync(abs(root, paths.contractResults), { force: true });
 }
 
 async function runJudge(deps: ReviewDeps, paths: ReviewPaths): Promise<JudgeResult | null> {
