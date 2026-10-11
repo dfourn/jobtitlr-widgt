@@ -18,4 +18,19 @@ export default tseslint.config(
       '@typescript-eslint/consistent-type-imports': 'error',
     },
   },
+  {
+    // The locked contract and review harness run in Node (Playwright), never in the browser bundle.
+    files: ['review/**/*.ts'],
+    languageOptions: { globals: { ...globals.node } },
+    rules: {
+      // Mirrors gate G5 (spec 03): a contract test can never be focused or skipped.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'MemberExpression[property.name=/^(only|skip|fixme)$/]',
+          message: 'Contract tests must not use .only, .skip or .fixme (spec 03, gate G5).',
+        },
+      ],
+    },
+  },
 );
