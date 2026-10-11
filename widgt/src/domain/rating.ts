@@ -65,6 +65,13 @@ export function shareOf(count: number, total: number): number {
  * @param score - A rounded score, so the word agrees with the number shown.
  */
 export function defaultLabelFor(score: number): string {
-  void score;
-  throw new Error('not implemented');
+  return LABEL_BANDS.find((band) => score >= band.min)?.label ?? 'Poor';
 }
+
+/** A-W6 bands, highest first. Placeholders until product confirms Feefo's real bands. */
+const LABEL_BANDS: readonly { readonly min: number; readonly label: string }[] = [
+  { min: 4.5, label: 'Excellent' },
+  { min: 4, label: 'Very good' },
+  { min: 3, label: 'Good' },
+  { min: 2, label: 'Fair' },
+];
