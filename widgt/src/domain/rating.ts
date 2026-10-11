@@ -164,7 +164,33 @@ export function summarise(
   counts: RatingCounts,
   labelFor: (score: number) => string = defaultLabelFor,
 ): RatingSummaryModel {
-  void counts;
-  void labelFor;
-  throw new Error('not implemented');
+  const valid = validateCounts(counts);
+  const total = totalOf(valid);
+  const rows = Object.freeze(
+    STAR_RATINGS.map((rating) =>
+      Object.freeze({ rating, count: valid[rating], share: shareOf(valid[rating], total) }),
+    ),
+  );
+  const average = averageOf(valid);
+  if (average === null) {
+    return Object.freeze({
+      kind: 'empty',
+      total: 0,
+      average: null,
+      score: null,
+      label: null,
+      fills: Object.freeze(starFills(0)),
+      rows,
+    });
+  }
+  const score = roundScore(average);
+  return Object.freeze({
+    kind: 'rated',
+    total,
+    average,
+    score,
+    label: labelFor(score),
+    fills: Object.freeze(starFills(score)),
+    rows,
+  });
 }
