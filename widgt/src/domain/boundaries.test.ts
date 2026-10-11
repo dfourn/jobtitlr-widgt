@@ -46,6 +46,14 @@ describe('src/domain boundaries', () => {
     expect(ruleIds).toContain('no-restricted-imports');
   });
 
+  it('AC-7.3 rejects a React import in a .tsx file in src/domain', async () => {
+    const ruleIds = await ruleIdsFor(
+      "import React from 'react';\nexport const lib = React;\n",
+      'src/domain/Pretend.tsx',
+    );
+    expect(ruleIds).toContain('no-restricted-imports');
+  });
+
   it('AC-7.3 rejects import.meta in src/domain', async () => {
     const ruleIds = await ruleIdsFor(
       'export const mode = import.meta.env.MODE;\n',
