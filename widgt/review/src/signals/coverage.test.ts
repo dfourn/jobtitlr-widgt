@@ -24,7 +24,7 @@ describe('AC-L1 AC coverage', () => {
   it.each([
     { title: 'AC-1.1 shows the label', ids: ['AC-1.1'] },
     { title: 'AC-2.1 rounds 4.65 to 4.7', ids: ['AC-2.1'] },
-    { title: 'AC-4.2 AC-4.3 toggling', ids: ['AC-4.2', 'AC-4.3'] },
+    { title: 'AC-4.2 AC-4.3 toggling', ids: ['AC-4.2'] },
     { title: 'renders (see AC-1.1)', ids: [] },
   ])('AC-L11 the title $title cites $ids', ({ title, ids }) => {
     expect(titleAcIds(title)).toEqual(ids);
@@ -57,8 +57,20 @@ describe('AC-L11 unit AC coverage counts passing unit tests over the unit-testab
     expect(acCoverage(fs, 'docs/02.md', results)).toMatchObject({ cited: ['AC-1.1'], value: 50, detail: 'AC coverage 50% (1/2)' });
   });
 
-  it('AC-L11 a describe title cites its IDs for the passing tests inside it', () => {
+  it('AC-L11 a describe title cites its first ID for the passing tests inside it', () => {
     const results: UnitResults = { tests: [test('renders', true, ['AC-1.1 AC-1.2 the breakdown'])], fileErrors: [] };
+    expect(acCoverage(fs, 'docs/02.md', results).cited).toEqual(['AC-1.1']);
+  });
+
+  it('AC-L11 one test listing every ID in its title cites only the first', () => {
+    const padded = 'AC-1.1 AC-1.2 AC-2.1 AC-2.2 AC-3.1 AC-4.1 AC-4.6 ok';
+    expect(titleAcIds(padded)).toEqual(['AC-1.1']);
+    const results: UnitResults = { tests: [test(padded, true)], fileErrors: [] };
+    expect(acCoverage(fs, 'docs/02.md', results)).toMatchObject({ cited: ['AC-1.1'], value: 50 });
+  });
+
+  it('AC-L11 a test and its describe each cite their own first ID', () => {
+    const results: UnitResults = { tests: [test('AC-1.2 AC-2.1 five rows', true, ['AC-1.1 AC-4.1 the breakdown'])], fileErrors: [] };
     expect(acCoverage(fs, 'docs/02.md', results).cited).toEqual(['AC-1.1', 'AC-1.2']);
   });
 
