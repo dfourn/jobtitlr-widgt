@@ -55,7 +55,7 @@ describe('AC-L1 visual similarity', () => {
     expect(signal.value).toBe(87.5);
     expect(signal.detail).toBe('foreground similarity 80.0% (20 of 100 foreground pixels differ)');
     expect(existsSync(diff)).toBe(true);
-    expect(readPng(diff).width).toBe(10);
+    expect(readPng(diff).width).toBe(20);
   });
 
   it('AC-L1 reports a size mismatch in the notes', () => {

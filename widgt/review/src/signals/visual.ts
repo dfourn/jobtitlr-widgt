@@ -40,25 +40,77 @@ export function fitToSize(image: RgbaImage, width: number, height: number): { im
   return { image: { width, height, data }, note };
 }
 
-export interface ImageComparison {
-  /** 1 - diffPixels / totalPixels. */
+/** pixelmatch's colour threshold (its default): the maximum OKLab distance of two equal pixels. */
+const PIXELMATCH_THRESHOLD = 0.1;
+
+/**
+ * A pixel is ink (foreground) when the mean of its red, green and blue is
+ * below this. Near-white pixels, such as the page and card background, are not.
+ */
+export const INK_BELOW = 245;
+
+function isInk(data: Uint8Array, at: number): boolean {
+  return (data[at] ?? 255) + (data[at + 1] ?? 255) + (data[at + 2] ?? 255) < INK_BELOW * 3;
+}
+
+export interface ForegroundComparison {
+  /**
+   * 1 - differentPixels / foregroundPixels. Two images without any foreground
+   * are identical, so they score 1.
+   */
   readonly similarity: number;
-  readonly diffPixels: number;
-  readonly totalPixels: number;
+  /** Foreground pixels pixelmatch counts as different (anti-aliasing forgiven). */
+  readonly differentPixels: number;
+  /** Pixels that are ink in either image (the union). */
+  readonly foregroundPixels: number;
+}
+
+/**
+ * Foreground similarity of two images of the same size (AC-L10). pixelmatch
+ * (threshold 0.1, anti-aliasing detection on) marks differing pixels in a diff
+ * mask; with `diffMask` it leaves anti-aliased pixels transparent, so they are
+ * forgiven. Only pixels that are ink in either image are counted, so a shared
+ * white background neither helps nor hurts.
+ */
+export function foregroundSimilarity(candidate: RgbaImage, reference: RgbaImage): ForegroundComparison {
+  const { width, height } = reference;
+  if (candidate.width !== width || candidate.height !== height) {
+    throw new RangeError(
+      `images differ in size: ${String(candidate.width)}x${String(candidate.height)} vs ${String(width)}x${String(height)}`,
+    );
+  }
+  const mask = new Uint8Array(width * height * 4);
+  pixelmatch(candidate.data, reference.data, mask, width, height, { threshold: PIXELMATCH_THRESHOLD, diffMask: true });
+  let foregroundPixels = 0;
+  let differentPixels = 0;
+  for (let at = 0; at < mask.length; at += 4) {
+    if (!isInk(candidate.data, at) && !isInk(reference.data, at)) continue;
+    foregroundPixels += 1;
+    if ((mask[at + 3] ?? 0) > 0) differentPixels += 1;
+  }
+  return {
+    similarity: foregroundPixels === 0 ? 1 : 1 - differentPixels / foregroundPixels,
+    differentPixels,
+    foregroundPixels,
+  };
+}
+
+export interface ImageComparison extends ForegroundComparison {
+  /** pixelmatch's diff image, for people: differences red, anti-aliasing yellow. */
   readonly diff: RgbaImage;
   readonly note: string | null;
 }
 
-/** Compares a screenshot with the reference using pixelmatch (default threshold 0.1). */
+/**
+ * Compares a screenshot with the reference on foreground pixels (AC-L10),
+ * after fitting the screenshot to the reference size ({@link fitToSize}).
+ */
 export function compareImages(actual: RgbaImage, reference: RgbaImage): ImageComparison {
   const fitted = fitToSize(actual, reference.width, reference.height);
   const diff = new Uint8Array(reference.width * reference.height * 4);
-  const diffPixels = pixelmatch(fitted.image.data, reference.data, diff, reference.width, reference.height, { threshold: 0.1 });
-  const totalPixels = reference.width * reference.height;
+  pixelmatch(fitted.image.data, reference.data, diff, reference.width, reference.height, { threshold: PIXELMATCH_THRESHOLD });
   return {
-    similarity: totalPixels === 0 ? 0 : 1 - diffPixels / totalPixels,
-    diffPixels,
-    totalPixels,
+    ...foregroundSimilarity(fitted.image, reference),
     diff: { width: reference.width, height: reference.height, data: diff },
     note: fitted.note,
   };
@@ -107,7 +159,7 @@ export function collectVisual(
     return {
       value: visualScore(result.similarity),
       similarity: result.similarity,
-      detail: `similarity ${(result.similarity * 100).toFixed(1)}% (${String(result.diffPixels)} of ${String(result.totalPixels)} pixels differ)`,
+      detail: `foreground similarity ${(result.similarity * 100).toFixed(1)}% (${String(result.differentPixels)} of ${String(result.foregroundPixels)} foreground pixels differ)`,
       notes: result.note === null ? [] : [result.note],
     };
   } catch (error) {
