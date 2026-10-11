@@ -141,3 +141,12 @@ Measured by the planning pass with throwaway scripts (pinned Chromium, DPR 1, th
 - **Coverage can still be gamed** with trivial tests that pass.
 - **The four AC-6.3 capture tests pass without checking behaviour** (about 1.7 points).
 - **Unverified**: exactly how React 19 with Testing Library reports errors thrown during render; the Phase 3 component test uses a boundary to be safe.
+
+## Implementation notes
+
+Deviations from the plan, made while implementing it:
+- **Step 3**: the ESLint domain guard covers `src/domain/**/*.{ts,tsx}`, not only `.ts`, so a `.tsx` file cannot bring React back in (AC-7.3 test, `d81121e`).
+- **Step 9, AC-6.3**: the single `<img>` must cover at most 4% of the widget's area (the reference logo is about 1.4% of the card), so the one allowed image cannot be the reference PNG itself.
+- **Step 9, AC-6.3**: the CSS image check is wider than "no `url()` background": no `url()` or `image-set()` on the widget, a descendant or their `::before`/`::after` (background, border image, list marker, generated content), and `feImage` and image inputs are refused too.
+- **Step 6, calibration**: an all-white widget scores 0.114 foreground similarity against the reference card (1.8 points), because the anti-aliased edges of the reference's text are forgiven; recorded in spec 03 §8 rather than fixed.
+- **Step 11**: `review/tsconfig.json` is locked as well as the root TypeScript configs.
