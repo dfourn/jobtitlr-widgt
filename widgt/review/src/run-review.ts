@@ -11,6 +11,7 @@ import { DEFAULT_WEIGHTS, score } from './score';
 import { axeSignal, readAxeStates } from './signals/axe';
 import { contractSignal, parsePlaywrightReport, responsiveSignal } from './signals/contract';
 import { acCoverage } from './signals/coverage';
+import { requirePresence, widgetPresence } from './signals/presence';
 import { parseVitestReport, unitPassRate } from './signals/unit';
 import { collectVisual } from './signals/visual';
 import { GATE_IDS, SIGNAL_KEYS, type SignalKey, type Signals } from './types';
@@ -68,15 +69,18 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   const unitResults = readJson(fs, paths.vitestResults, (json) => parseVitestReport(json, root));
   const unitRate = unitPassRate(unitResults);
   const coverage = acCoverage(fs, paths.spec);
-  const a11y = axeSignal(readAxeStates(fs, paths.axeDir), paths.axeDir);
-  const responsive = responsiveSignal(contractResults);
+  // AC-L8: a11y, responsive and visual score 0 unless the widget rendered.
+  const presence = widgetPresence(contractResults);
+  const a11y = requirePresence(presence, axeSignal(readAxeStates(fs, paths.axeDir), paths.axeDir));
+  const responsive = requirePresence(presence, responsiveSignal(contractResults));
   const visualPaths = {
     screenshot: abs(root, paths.visualScreenshot),
     reference: abs(root, paths.reference),
     diff: abs(root, paths.diff),
   };
-  const visual = collectVisual(visualPaths, root);
-  notes.push(...visual.notes);
+  const collected = collectVisual(visualPaths, root);
+  notes.push(...collected.notes);
+  const visual = requirePresence(presence, collected);
 
   const judged = await runJudge(deps, paths);
   if (judged !== null) {
