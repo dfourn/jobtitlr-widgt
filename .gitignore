@@ -1,0 +1,16 @@
+# OS / editors
+.DS_Store
+.idea/
+*.iml
+.vscode/
+
+# Java
+target/
+
+# Node
+node_modules/
+dist/
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
