@@ -1,3 +1,4 @@
+import type { ReadonlyFs } from '../io/fs';
 import { arrayOf, field, isRecord, numberOf, stringOf } from '../json';
 import { axeScore, type AxeCounts } from '../score';
 import type { ContractResults } from './contract';
@@ -85,4 +86,24 @@ export function a11ySignal(
     value: (passed / cases.length) * 100,
     detail: `axe.json not found; fallback: ${String(passed)}/${String(cases.length)} AC-3.6 contract tests passed`,
   };
+}
+
+/** The states the AC-3.6 contract tests check, one `<state>.json` each. */
+export const AXE_STATES = ['default', 'static', 'selected'] as const;
+
+/** Per-state counts read from the axe folder; `null` marks an unreadable file. */
+export type AxeStates = ReadonlyMap<string, AxeCounts | null>;
+
+/** Reads `<dir>/<state>.json` for every state file in `dir`. */
+export function readAxeStates(fs: ReadonlyFs, dir: string): AxeStates {
+  void fs;
+  void dir;
+  return new Map();
+}
+
+/** The accessibility signal: the mean per-state axe score over {@link AXE_STATES}. */
+export function axeSignal(states: AxeStates, source: string): { readonly value: number | null; readonly detail: string } {
+  void states;
+  void source;
+  return { value: null, detail: '' };
 }

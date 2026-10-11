@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
-import { a11ySignal, parseAxeFile } from './axe';
+import { memoryFs } from '../io/fs';
+import { a11ySignal, AXE_STATES, axeSignal, parseAxeFile, readAxeStates } from './axe';
 
 describe('AC-L1 axe results', () => {
   it.each([
@@ -51,5 +52,68 @@ describe('AC-L1 axe results', () => {
 
   it('AC-L1 is missing when there is neither axe.json nor an AC-3.6 test', () => {
     expect(a11ySignal(null, null).value).toBeNull();
+  });
+});
+
+describe('AC-L9 accessibility over the expected states', () => {
+  const dir = 'review/runs/latest/axe';
+  const counts = (critical: number, serious: number, moderate: number, minor: number) => ({ critical, serious, moderate, minor });
+
+  it('AC-L9 the expected states are default, static and selected', () => {
+    expect(AXE_STATES).toEqual(['default', 'static', 'selected']);
+  });
+
+  it('AC-L9 reads one file per state and counts violated rules, not nodes', () => {
+    const fs = memoryFs({
+      [`${dir}/default.json`]: JSON.stringify({ state: 'default', violations: [{ id: 'color-contrast', impact: 'serious', nodes: 4 }, { id: 'region', impact: 'moderate', nodes: 1 }] }),
+      [`${dir}/static.json`]: JSON.stringify({ state: 'static', violations: [] }),
+      [`${dir}/selected.json`]: JSON.stringify({ state: 'selected', violations: [{ id: 'list', impact: null, nodes: 2 }] }),
+    });
+    expect(readAxeStates(fs, dir)).toEqual(
+      new Map([
+        ['default', counts(0, 1, 1, 0)],
+        ['selected', counts(0, 0, 0, 0)],
+        ['static', counts(0, 0, 0, 0)],
+      ]),
+    );
+  });
+
+  it('AC-L9 averages the per-state scores over the three states', () => {
+    const states = new Map([
+      ['default', counts(0, 1, 0, 2)],
+      ['static', counts(0, 0, 0, 0)],
+      ['selected', counts(1, 0, 0, 0)],
+    ]);
+    expect(axeSignal(states, dir)).toEqual({
+      value: (83 + 100 + 75) / 3,
+      detail: 'axe, mean of default, static, selected: default 83 (1 serious, 2 minor); static 100; selected 75 (1 critical)',
+    });
+  });
+
+  it('AC-L9 a missing state scores 0 and is named', () => {
+    const states = new Map([
+      ['default', counts(0, 0, 0, 0)],
+      ['static', counts(0, 0, 0, 0)],
+    ]);
+    expect(axeSignal(states, dir)).toEqual({
+      value: 200 / 3,
+      detail: 'axe, mean of default, static, selected: default 100; static 100; selected 0 (missing)',
+    });
+  });
+
+  it('AC-L9 an unreadable state counts as missing', () => {
+    const fs = memoryFs({
+      [`${dir}/default.json`]: JSON.stringify({ state: 'default', violations: [] }),
+      [`${dir}/static.json`]: '{"state": "static", "violations": [',
+      [`${dir}/selected.json`]: JSON.stringify({ state: 'selected', result: 'clean' }),
+    });
+    expect(axeSignal(readAxeStates(fs, dir), dir)).toEqual({
+      value: 100 / 3,
+      detail: 'axe, mean of default, static, selected: default 100; static 0 (unreadable); selected 0 (unreadable)',
+    });
+  });
+
+  it('AC-L9 no axe folder scores 0 and says so', () => {
+    expect(axeSignal(readAxeStates(memoryFs({}), dir), dir)).toEqual({ value: 0, detail: `0: no axe results found in ${dir}` });
   });
 });
