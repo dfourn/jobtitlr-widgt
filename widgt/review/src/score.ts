@@ -1,3 +1,4 @@
+import { SIGNAL_KEYS } from './types';
 import type { GateId, GateResult, SignalKey, Signals, Weights } from './types';
 
 /** Weights of spec 03 §3. They sum to 100. */
@@ -43,8 +44,58 @@ export interface ScoreResult {
  *   deliberately not redistributed, otherwise breaking a check would pay.
  */
 export function score(signals: Signals, weights: Weights, gates: readonly GateResult[]): ScoreResult {
-  void signals;
-  void weights;
-  void gates;
-  throw new Error('not implemented');
+  assertValidWeights(weights);
+  const judgeOff = !isMeasured(signals.judge);
+  const redistributable = judgeOff ? 100 - weights.judge : 100;
+  if (redistributable <= 0) {
+    throw new RangeError('The judge is off and no other signal carries weight');
+  }
+
+  const perSignal = {} as Record<SignalKey, SignalScore>;
+  const missing: SignalKey[] = [];
+  let uncapped = 0;
+  for (const key of SIGNAL_KEYS) {
+    const raw = signals[key];
+    const value = isMeasured(raw) ? clamp(raw, 0, 100) : null;
+    const effectiveWeight = key === 'judge' && judgeOff ? 0 : (weights[key] * 100) / redistributable;
+    const contribution = ((value ?? 0) * effectiveWeight) / 100;
+    perSignal[key] = { value, weight: weights[key], effectiveWeight, contribution };
+    if (value === null && key !== 'judge') missing.push(key);
+    uncapped += contribution;
+  }
+
+  const failedGates = gates.filter((gate) => !gate.passed).map((gate) => gate.id);
+  const uncappedTotal = roundTo1(uncapped);
+  return {
+    total: failedGates.length > 0 ? 0 : uncappedTotal,
+    uncappedTotal,
+    perSignal,
+    gatesPassed: failedGates.length === 0,
+    failedGates,
+    missing,
+  };
+}
+
+function assertValidWeights(weights: Weights): void {
+  const values = SIGNAL_KEYS.map((key) => weights[key]);
+  if (values.some((w) => !Number.isFinite(w) || w < 0)) {
+    throw new RangeError('Weights must be finite and >= 0');
+  }
+  const sum = values.reduce((a, b) => a + b, 0);
+  if (Math.abs(sum - 100) > 1e-9) {
+    throw new RangeError(`Weights must sum to 100, got ${String(sum)}`);
+  }
+}
+
+function isMeasured(value: number | null): value is number {
+  return value !== null && Number.isFinite(value);
+}
+
+/** Clamps `value` into [min, max]. */
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function roundTo1(value: number): number {
+  return Math.round(value * 10) / 10;
 }
