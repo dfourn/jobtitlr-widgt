@@ -42,6 +42,6 @@ export type StarFills = readonly [number, number, number, number, number];
  * @param score - A score from {@link roundScore}, or 0 when there are no reviews.
  */
 export function starFills(score: number): StarFills {
-  void score;
-  throw new Error('not implemented');
+  const fill = (star: number): number => Math.min(1, Math.max(0, score - (star - 1)));
+  return [fill(1), fill(2), fill(3), fill(4), fill(5)];
 }
