@@ -1,6 +1,9 @@
 // @vitest-environment node
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { memoryFs } from '../io/fs';
+import { memoryFs, nodeFs } from '../io/fs';
 import { AXE_STATES, axeSignal, parseAxeState, readAxeStates } from './axe';
 
 describe('AC-L9 accessibility over the expected states', () => {
@@ -64,6 +67,19 @@ describe('AC-L9 accessibility over the expected states', () => {
       value: 100 / 3,
       detail: 'axe, mean of default, static, selected: default 100; static 0 (unreadable); selected 0 (unreadable)',
     });
+  });
+
+  it.each(['runs/axe/', './runs/axe', './runs/axe/'])('AC-L9 reads the states from --axe %s like runs/axe', (given) => {
+    const root = mkdtempSync(join(tmpdir(), 'widgt-axe-'));
+    try {
+      mkdirSync(join(root, 'runs', 'axe'), { recursive: true });
+      for (const state of AXE_STATES) {
+        writeFileSync(join(root, 'runs', 'axe', `${state}.json`), JSON.stringify({ state, violations: [] }));
+      }
+      expect([...readAxeStates(nodeFs(root), given).keys()].sort()).toEqual(['default', 'selected', 'static']);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it('AC-L9 no axe folder scores 0 and says so', () => {
