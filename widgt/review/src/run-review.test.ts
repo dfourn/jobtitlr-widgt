@@ -74,7 +74,6 @@ describe('AC-L1 runReview()', () => {
     mkdirSync(join(base, 'docs', 'specs'), { recursive: true });
     writeFileSync(join(base, 'docs', 'specs', '02-widgt.md'), '- **AC-1.1** label\n- **AC-1.2** rows\n');
     mkdirSync(join(root, 'src', 'domain'), { recursive: true });
-    writeFileSync(join(root, 'src', 'domain', 'rating.test.ts'), "it('AC-1.1 shows the label', () => {});\n");
     writePng(join(root, 'review', 'reference', 'widget-reference.png'), whiteImage(8));
     writeFileSync(join(root, 'review', 'contract.lock'), serialiseLock(computeLock(nodeFs(root))));
   });

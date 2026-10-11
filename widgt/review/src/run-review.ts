@@ -68,7 +68,7 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   const contract = contractSignal(contractResults, paths.contractResults);
   const unitResults = readJson(fs, paths.vitestResults, (json) => parseVitestReport(json, root));
   const unitRate = unitPassRate(unitResults);
-  const coverage = acCoverage(fs, paths.spec);
+  const coverage = acCoverage(fs, paths.spec, unitResults);
   // AC-L8: a11y, responsive and visual score 0 unless the widget rendered.
   const presence = widgetPresence(contractResults);
   const a11y = requirePresence(presence, axeSignal(readAxeStates(fs, paths.axeDir), paths.axeDir));

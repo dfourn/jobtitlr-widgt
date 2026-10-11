@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { WIDGT_ROOT } from '../config';
 import { memoryFs } from '../io/fs';
-import { acCoverage, citedAcIds, parseSpecAcIds, unitTestableAcIds } from './coverage';
+import { acCoverage, parseSpecAcIds, titleAcIds, unitTestableAcIds } from './coverage';
 import type { UnitResults, UnitTest } from './unit';
 
 const spec = [
@@ -22,32 +22,23 @@ describe('AC-L1 AC coverage', () => {
   });
 
   it.each([
-    { source: "it('AC-1.1 shows the label', () => {});", ids: ['AC-1.1'] },
-    { source: 'test("AC-2.1 rounds", () => {});', ids: ['AC-2.1'] },
-    { source: 'it.each(rows)(`AC-2.1 rounds $input`, () => {});', ids: ['AC-2.1'] },
-    { source: "describe('AC-4.2 AC-4.3 toggling', () => {});", ids: ['AC-4.2', 'AC-4.3'] },
-    { source: "// it('AC-1.1 commented out', () => {});", ids: [] },
-    { source: "/* it('AC-1.1 block comment') */", ids: [] },
-    { source: "it('renders (see AC-1.1)', () => {});", ids: [] },
-  ])('AC-L1 finds $ids in $source', ({ source, ids }) => {
-    expect([...citedAcIds(source)]).toEqual(ids);
-  });
-
-  it('AC-L1 measures the share of spec IDs cited by test files under src/', () => {
-    const fs = memoryFs({
-      'docs/02.md': spec,
-      'src/domain/rating.test.ts': "it('AC-2.1 rounds', () => {}); it('AC-1.1 label', () => {});",
-      'src/domain/rating.ts': "const label = 'AC-1.2 not a test file';",
-      'review/contract/widget.spec.ts': "test('AC-1.2 rows', () => {});",
-    });
-    const coverage = acCoverage(fs, 'docs/02.md');
-    expect(coverage.value).toBe(50);
-    expect(coverage.cited).toEqual(['AC-1.1', 'AC-2.1']);
-    expect(coverage.detail).toBe('AC coverage 50% (2/4)');
+    { title: 'AC-1.1 shows the label', ids: ['AC-1.1'] },
+    { title: 'AC-2.1 rounds 4.65 to 4.7', ids: ['AC-2.1'] },
+    { title: 'AC-4.2 AC-4.3 toggling', ids: ['AC-4.2', 'AC-4.3'] },
+    { title: 'renders (see AC-1.1)', ids: [] },
+  ])('AC-L11 the title $title cites $ids', ({ title, ids }) => {
+    expect(titleAcIds(title)).toEqual(ids);
   });
 
   it('AC-L1 reports a missing spec instead of throwing', () => {
-    expect(acCoverage(memoryFs({}), 'docs/02.md')).toMatchObject({ value: null, detail: 'spec not found: docs/02.md' });
+    expect(acCoverage(memoryFs({}), 'docs/02.md', null)).toMatchObject({ value: null, detail: 'spec not found: docs/02.md' });
+  });
+
+  it('AC-L11 reports missing unit results instead of guessing', () => {
+    expect(acCoverage(memoryFs({ 'docs/02.md': spec }), 'docs/02.md', null)).toMatchObject({
+      value: null,
+      detail: 'AC coverage unknown: unit test results not found',
+    });
   });
 });
 
