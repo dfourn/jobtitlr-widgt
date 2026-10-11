@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { abs, type ReviewPaths, SCREENSHOT_NAMES } from './config';
+import { abs, defaultPaths, type ReviewPaths, SCREENSHOT_NAMES } from './config';
 import { checkContractLock, checkForbiddenPatterns, checkTestCount, runCommandGates } from './gates';
 import type { ReadonlyFs } from './io/fs';
 import type { CommandRunner } from './io/runner';
@@ -58,7 +58,7 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   await runner.run('npx', ['--no-install', 'vitest', 'run', '--reporter=json', `--outputFile=${abs(root, paths.vitestResults)}`]);
 
   // Vitest runs generator-owned tests in Node, which can write files: clear what Playwright writes and the score reads.
-  clearContractOutputs(root, paths);
+  clearContractOutputs(root, paths.latestDir);
 
   log('contract tests (npm run test:e2e)');
   const e2e = await runner.run('npm', ['run', 'test:e2e'], { env: { REVIEW_RUN_DIR: abs(root, paths.latestDir) } });
@@ -155,14 +155,17 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
 /**
  * Removes what the contract tests write and the score reads (spec 03 §4), after Vitest and before
  * Playwright, so a file left by a unit test cannot pass for a contract output: the axe results, the
- * screenshots and Playwright's JSON report (deleted too, in case Playwright fails to start).
+ * screenshots and Playwright's JSON report (deleted too, in case Playwright fails to start). Only
+ * inside the run folder, where Playwright writes (`REVIEW_RUN_DIR`); a path given on the command
+ * line is only read, never deleted.
  */
-function clearContractOutputs(root: string, paths: ReviewPaths): void {
-  for (const dir of [paths.axeDir, paths.screenshotsDir]) {
+function clearContractOutputs(root: string, latestDir: string): void {
+  const written = defaultPaths(latestDir);
+  for (const dir of [written.axeDir, written.screenshotsDir]) {
     rmSync(abs(root, dir), { recursive: true, force: true });
     mkdirSync(abs(root, dir), { recursive: true });
   }
-  rmSync(abs(root, paths.contractResults), { force: true });
+  rmSync(abs(root, written.contractResults), { force: true });
 }
 
 async function runJudge(deps: ReviewDeps, paths: ReviewPaths): Promise<JudgeResult | null> {
