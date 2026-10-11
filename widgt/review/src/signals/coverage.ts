@@ -37,14 +37,15 @@ export function unitTestableAcIds(spec: string): string[] {
 }
 
 /**
- * AC IDs cited by one test or describe title. Test names start with their AC
- * ID (spec 02 §6), so a title that starts with `AC-x.y` cites every ID in it
- * (`'AC-4.2 AC-4.3 toggles'` cites both); a title that only mentions an ID
- * later (`'renders (see AC-1.1)'`) cites none.
+ * AC IDs cited by one test or describe title. Test names start with the AC ID
+ * they check (spec 02 §6), so a title cites only the ID it starts with
+ * (`'AC-4.2 AC-4.3 toggles'` cites AC-4.2), and listing more IDs earns no more
+ * coverage; a title that only mentions an ID later (`'renders (see AC-1.1)'`)
+ * cites none. Returns at most one ID.
  */
 export function titleAcIds(title: string): string[] {
-  if (!/^\s*AC-\d+\.\d+/.test(title)) return [];
-  return title.match(/AC-\d+\.\d+/g) ?? [];
+  const first = /^\s*(AC-\d+\.\d+)\b/.exec(title)?.[1];
+  return first === undefined ? [] : [first];
 }
 
 export interface AcCoverage {
@@ -58,8 +59,8 @@ export interface AcCoverage {
 /**
  * Share of spec 02's unit-testable IDs cited by at least one **passing** unit
  * test (AC-L11). Citations come from the Vitest results, not the source, so a
- * failing test earns nothing. A test cites the IDs of its own title and of its
- * describe titles.
+ * failing test earns nothing. A test cites the first ID of its own title and
+ * of each of its describe titles ({@link titleAcIds}).
  */
 export function acCoverage(fs: ReadonlyFs, specPath: string, results: UnitResults | null): AcCoverage {
   if (!fs.exists(specPath)) {
