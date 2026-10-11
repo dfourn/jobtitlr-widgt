@@ -22,6 +22,13 @@ const REFERENCE_SIZE = { width: 401, height: 443 } as const;
 /** `?visual=1` puts the widget in a wrapper exactly this wide (spec 02 section 8): the reference card's width. */
 const VISUAL_WRAPPER_WIDTH = 360;
 
+/**
+ * The most of the widget's area the feefo logo may cover. The reference logo is about 92 x 22 px,
+ * 1.4% of the 360 x 405 card, so this leaves room for padding but not for the one `<img>` to show
+ * the reference card, or a large part of it, instead of the logo.
+ */
+const MAX_LOGO_SHARE = 0.04;
+
 /** Elements that can paint a picture without an `<img>`. */
 const PICTURE_ELEMENTS = 'canvas, iframe, object, embed, video, svg image, feImage, input[type="image"]';
 
@@ -128,6 +135,13 @@ test.describe('AC-6 visual fidelity', () => {
         'alt',
         'feefo',
       );
+      const [logoBox, widgetBox] = await Promise.all([images.boundingBox(), widget.boundingBox()]);
+      const widgetArea = widgetBox === null ? 0 : widgetBox.width * widgetBox.height;
+      const logoArea = logoBox === null ? 0 : logoBox.width * logoBox.height;
+      expect(
+        widgetArea === 0 ? 1 : logoArea / widgetArea,
+        `the feefo logo covers at most ${MAX_LOGO_SHARE * 100}% of the widget, so it cannot be a picture of the card`,
+      ).toBeLessThanOrEqual(MAX_LOGO_SHARE);
       expect(await cssImages(widget), 'no CSS url() or image-set() images inside the widget').toEqual([]);
       const pictures = await widget.evaluate(
         (root, selector) => Array.from(root.querySelectorAll(selector)).map((el) => el.outerHTML.slice(0, 80)),
