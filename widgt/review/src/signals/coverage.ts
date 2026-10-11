@@ -1,4 +1,5 @@
 import type { ReadonlyFs } from '../io/fs';
+import type { UnitResults } from './unit';
 
 /**
  * The AC sub-IDs of spec 02 (`**AC-4.3**`), limited to the given groups
@@ -15,6 +16,11 @@ export function parseSpecAcIds(spec: string, groups: readonly number[] = [1, 2, 
     const [b1 = 0, b2 = 0] = b.slice(3).split('.').map(Number);
     return a1 - b1 || a2 - b2;
   });
+}
+
+/** The spec 02 IDs unit and component tests can check (AC-L11). */
+export function unitTestableAcIds(spec: string): string[] {
+  return parseSpecAcIds(spec);
 }
 
 const STRING_LITERAL = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g;
@@ -47,7 +53,8 @@ export interface AcCoverage {
 const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
 
 /** Share of spec 02's AC-1..7 sub-IDs cited by at least one test under `testDirs`. */
-export function acCoverage(fs: ReadonlyFs, specPath: string, testDirs: readonly string[] = ['src']): AcCoverage {
+export function acCoverage(fs: ReadonlyFs, specPath: string, results?: UnitResults | null, testDirs: readonly string[] = ['src']): AcCoverage {
+  void results;
   if (!fs.exists(specPath)) {
     return { value: null, required: [], cited: [], detail: `spec not found: ${specPath}` };
   }
