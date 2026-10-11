@@ -1,4 +1,4 @@
-import { averageOf, totalOf } from './rating';
+import { averageOf, roundScore, totalOf } from './rating';
 import type { RatingCounts } from './types';
 
 /** The data in the brief's reference design (B2.1). */
@@ -31,5 +31,36 @@ describe('averageOf', () => {
 
   it('AC-2.2 returns null, not NaN, when there are no reviews', () => {
     expect(averageOf(NO_REVIEWS)).toBeNull();
+  });
+});
+
+describe('roundScore', () => {
+  it.each<[number, number]>([
+    [4.608, 4.6],
+    [4.64, 4.6],
+    [4.6499, 4.6],
+    // x.x5 must round half-up. 4.35, 1.15 and 2.55 are stored as doubles just
+    // below the decimal value, which is exactly where `toFixed(1)` rounds down.
+    [4.65, 4.7],
+    [4.25, 4.3],
+    [1.05, 1.1],
+    [4.35, 4.4],
+    [1.15, 1.2],
+    [2.55, 2.6],
+    [4.95, 5],
+    [5, 5],
+    [1, 1],
+  ])('AC-2.1 rounds %s half-up to %s', (average, expected) => {
+    expect(roundScore(average)).toBe(expected);
+  });
+
+  it.each<[string, number, RatingCounts]>([
+    ['93 / 20 = 4.65', 4.7, { 5: 13, 4: 7, 3: 0, 2: 0, 1: 0 }],
+    ['87 / 20 = 4.35', 4.4, { 5: 7, 4: 13, 3: 0, 2: 0, 1: 0 }],
+    ['the reference data', 4.6, REFERENCE],
+  ])('AC-2.1 rounds an average computed from counts (%s) to %s', (_name, expected, counts) => {
+    const average = averageOf(counts);
+    expect(average).not.toBeNull();
+    expect(roundScore(average ?? Number.NaN)).toBe(expected);
   });
 });

@@ -19,3 +19,12 @@ export function averageOf(counts: RatingCounts): number | null {
   const weighted = STAR_RATINGS.reduce((sum, star) => sum + star * counts[star], 0);
   return weighted / total;
 }
+
+/**
+ * Rounds an average to one decimal place, half-up (4.65 -> 4.7).
+ * @param average - A mean star rating.
+ */
+export function roundScore(average: number): number {
+  void average;
+  throw new Error('not implemented');
+}
