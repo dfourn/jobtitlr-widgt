@@ -1,7 +1,7 @@
 // @vitest-environment node
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { checkContractLock, computeLock, serialiseLock } from './gates';
+import { checkContractLock, checkForbiddenPatterns, computeLock, findForbiddenPatterns, serialiseLock } from './gates';
 import { memoryFs } from './io/fs';
 
 const sha = (text: string): string => createHash('sha256').update(text).digest('hex');
@@ -73,5 +73,51 @@ describe('AC-L3 contract lock (G4)', () => {
     const gate = checkContractLock(memoryFs({ ...tree, 'review/contract.lock': '{ nope' }));
     expect(gate.passed).toBe(false);
     expect(gate.detail).toMatch(/not valid/);
+  });
+});
+
+describe('AC-L4 forbidden patterns (G5)', () => {
+  const clean = {
+    'src/domain/rating.test.ts': "it('AC-2.1 rounds half-up', () => {\n  expect(1).toBe(1);\n});\n",
+    'src/main.tsx': 'process.exit(0);\nemitter.exit(1);\n',
+    'review/contract/widget.spec.ts': "test('AC-1.1 renders', async () => {});\n",
+  };
+
+  it('AC-L4 passes on clean sources', () => {
+    expect(checkForbiddenPatterns(memoryFs(clean))).toMatchObject({ id: 'G5', passed: true });
+  });
+
+  it.each([
+    { pattern: '.skip(', line: "it.skip('AC-2.1 rounds', () => {});" },
+    { pattern: '.skip(', line: "describe.skip('AC-4 interactions', () => {});" },
+    { pattern: '.only(', line: "test.only('AC-1.1 renders', () => {});" },
+    { pattern: 'xit(', line: "xit('AC-2.1 rounds', () => {});" },
+    { pattern: 'xdescribe(', line: "xdescribe('AC-2', () => {});" },
+    { pattern: '@ts-ignore', line: '// @ts-ignore' },
+    { pattern: '@ts-expect-error', line: '// @ts-expect-error' },
+    { pattern: '@ts-nocheck', line: '// @ts-nocheck' },
+    { pattern: 'eslint-disable', line: '// eslint-disable-next-line @typescript-eslint/no-explicit-any' },
+    { pattern: 'eslint-disable', line: '/* eslint-disable */' },
+  ])('AC-L4 fails on $pattern in $line', ({ pattern, line }) => {
+    const fs = memoryFs({ ...clean, 'src/components/Star/Star.test.tsx': `import x from 'y';\n${line}\n` });
+    expect(findForbiddenPatterns(fs)).toEqual([{ file: 'src/components/Star/Star.test.tsx', line: 2, pattern }]);
+    const gate = checkForbiddenPatterns(fs);
+    expect(gate.passed).toBe(false);
+    expect(gate.detail).toContain(`src/components/Star/Star.test.tsx:2 ${pattern}`);
+  });
+
+  it('AC-L4 also scans the contract specs', () => {
+    const fs = memoryFs({ ...clean, 'review/contract/widget.spec.ts': "test.skip('AC-1.1 renders', async () => {});" });
+    expect(checkForbiddenPatterns(fs).passed).toBe(false);
+  });
+
+  it('AC-L4 ignores review/src, where the patterns themselves are defined', () => {
+    const fs = memoryFs({ ...clean, 'review/src/gates.ts': "const label = '.skip(';" });
+    expect(checkForbiddenPatterns(fs).passed).toBe(true);
+  });
+
+  it('AC-L4 ignores non-source files such as images and CSS', () => {
+    const fs = memoryFs({ ...clean, 'src/notes.md': 'never use .only( here', 'src/a.css': '/* @ts-ignore */' });
+    expect(checkForbiddenPatterns(fs).passed).toBe(true);
   });
 });

@@ -105,3 +105,59 @@ function diffLocks(expected: ContractLock, actual: ContractLock): LockDiff {
     removed: expectedPaths.filter((path) => !(path in actual)),
   };
 }
+
+/** A forbidden pattern for G5. */
+export interface ForbiddenPattern {
+  readonly label: string;
+  readonly regex: RegExp;
+}
+
+/**
+ * G5 patterns: anything that hides a failing check. `xdescribe(` and
+ * `@ts-nocheck` go beyond the spec's list for the same reason.
+ */
+export const FORBIDDEN_PATTERNS: readonly ForbiddenPattern[] = [
+  { label: '.skip(', regex: /\.skip\s*\(/ },
+  { label: '.only(', regex: /\.only\s*\(/ },
+  { label: 'xit(', regex: /\bxit\s*\(/ },
+  { label: 'xdescribe(', regex: /\bxdescribe\s*\(/ },
+  { label: '@ts-ignore', regex: /@ts-ignore/ },
+  { label: '@ts-expect-error', regex: /@ts-expect-error/ },
+  { label: '@ts-nocheck', regex: /@ts-nocheck/ },
+  { label: 'eslint-disable', regex: /eslint-disable/ },
+];
+
+/**
+ * Where G5 looks. `review/src/` is deliberately not scanned: it is where the
+ * patterns above are defined and tested, so it would always match itself.
+ * It is safe to leave out because the generator may not edit `review/**`.
+ */
+export const DEFAULT_SCAN_DIRS: readonly string[] = ['src', 'review/contract'];
+
+const SCANNED_EXTENSIONS = /\.(?:[cm]?[jt]sx?)$/;
+
+export interface PatternViolation {
+  readonly file: string;
+  readonly line: number;
+  readonly pattern: string;
+}
+
+/** Lists every forbidden pattern in source files under `dirs`. */
+export function findForbiddenPatterns(
+  fs: ReadonlyFs,
+  dirs: readonly string[] = DEFAULT_SCAN_DIRS,
+  patterns: readonly ForbiddenPattern[] = FORBIDDEN_PATTERNS,
+): PatternViolation[] {
+  void fs;
+  void dirs;
+  void patterns;
+  void SCANNED_EXTENSIONS;
+  throw new Error('not implemented');
+}
+
+/** G5: no forbidden pattern in `src/` or `review/contract/` (AC-L4). */
+export function checkForbiddenPatterns(fs: ReadonlyFs, dirs: readonly string[] = DEFAULT_SCAN_DIRS): GateResult {
+  void fs;
+  void dirs;
+  throw new Error('not implemented');
+}
