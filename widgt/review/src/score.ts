@@ -108,10 +108,14 @@ export interface AxeCounts {
   readonly minor: number;
 }
 
-/** Visual similarity at or below this maps to 0 (spec 03 §3). */
-export const VISUAL_FLOOR = 0.8;
-/** Visual similarity at or above this maps to 100 (spec 03 §3). */
-export const VISUAL_CEILING = 0.98;
+/** Foreground similarity at or below this maps to 0 (spec 03 §3). */
+export const VISUAL_FLOOR = 0.1;
+/**
+ * Foreground similarity at or above this maps to 100 (spec 03 §3). Calibrated
+ * on one hand-tuned copy of the reference (0.864), so there is no reward for
+ * brute-forcing the last pixels; to revisit after Phase 3 iteration 1.
+ */
+export const VISUAL_CEILING = 0.9;
 
 /**
  * Accessibility signal: `100 - 25*critical - 15*serious - 5*moderate - 1*minor`,
@@ -123,8 +127,8 @@ export function axeScore(counts: AxeCounts): number {
 }
 
 /**
- * Visual signal: maps pixel similarity (0-1) linearly from 0.80 -> 0 to
- * 0.98 -> 100, clamped, one decimal place (spec 03 §3).
+ * Visual signal: maps foreground similarity (0-1) linearly from 0.10 -> 0 to
+ * 0.90 -> 100, clamped, one decimal place (spec 03 §3, AC-L10).
  */
 export function visualScore(similarity: number): number {
   if (!Number.isFinite(similarity)) return 0;

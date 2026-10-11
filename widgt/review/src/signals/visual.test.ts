@@ -57,12 +57,12 @@ describe('AC-L1 visual similarity', () => {
     const screenshot = join(dir, 'visual-401.png');
     const reference = join(dir, 'reference.png');
     const diff = join(dir, 'out', 'diff.png');
-    writePng(screenshot, image(10, 10, white, 3)); // 9 of 100 pixels differ -> 0.91
+    writePng(screenshot, image(10, 10, white, 4)); // 16 of 100 pixels differ -> 0.84
     writePng(reference, image(10, 10, white));
     const signal = collectVisual({ screenshot, reference, diff });
-    expect(signal.similarity).toBeCloseTo(0.91, 6);
-    expect(signal.value).toBe(61.1);
-    expect(signal.detail).toBe('similarity 91.0% (9 of 100 pixels differ)');
+    expect(signal.similarity).toBeCloseTo(0.84, 6);
+    expect(signal.value).toBe(92.5);
+    expect(signal.detail).toBe('similarity 84.0% (16 of 100 pixels differ)');
     expect(existsSync(diff)).toBe(true);
     expect(readPng(diff).width).toBe(10);
   });
