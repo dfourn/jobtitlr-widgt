@@ -123,3 +123,16 @@ Usage:
 - Fetching data, and the list of reviews the selection would filter (the host page owns that).
 - Theming beyond tokens, dark mode and RTL. These are mentioned as future work.
 - Packaging as an npm library or web component. Future work: Shadow DOM for style isolation when embedded in third-party sites.
+
+## 8. Demo page contract (used by the Playwright contract tests)
+
+`npm run dev` and `npm run preview` serve `/`, which renders the widget with the reference data. Query parameters choose the scenario:
+
+| URL | Renders |
+|---|---|
+| `/` | Interactive mode: `onRatingSelect` is wired to page state. Below the widget, an element with `role="status"` and `data-testid="selection"` shows `Selected: none` or `Selected: N stars` (singular for 1). |
+| `/?interactive=0` | Static mode: no `onRatingSelect`. |
+| `/?empty=1` | All counts are 0, in interactive mode. |
+| `/?visual=1` | Static mode. Only the widget, on a white page with no margin, in a wrapper exactly **401px** wide. Used for screenshot comparison with the 401x443 reference. |
+
+The widget is the only element with `data-testid="product-rating"`. The page has one `<main>` landmark, and its `<h1>` reads "widgt demo" (visually hidden in `?visual=1`).
