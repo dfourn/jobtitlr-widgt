@@ -108,3 +108,63 @@ export function validateCounts(input: unknown): RatingCounts {
 function showValue(value: unknown): string {
   return typeof value === 'number' ? String(value) : (JSON.stringify(value) ?? String(value));
 }
+
+/** One breakdown row: a rating, its review count and its share of all reviews. */
+export interface RatingRowModel {
+  readonly rating: StarRating;
+  readonly count: number;
+  readonly share: number;
+}
+
+interface SummaryBase {
+  readonly total: number;
+  readonly fills: StarFills;
+  /** Five rows in display order, 5 down to 1. */
+  readonly rows: readonly RatingRowModel[];
+}
+
+/** A summary with at least one review. */
+export interface RatedSummaryModel extends SummaryBase {
+  readonly kind: 'rated';
+  readonly average: number;
+  readonly score: number;
+  readonly label: string;
+}
+
+/** A summary with no reviews: nothing to average, so no score or label (AC-2.2). */
+export interface EmptySummaryModel extends SummaryBase {
+  readonly kind: 'empty';
+  readonly total: 0;
+  readonly average: null;
+  readonly score: null;
+  readonly label: null;
+}
+
+/**
+ * Everything the widget renders, derived once from the counts. A discriminated
+ * union, so a component cannot read a score without first handling "no reviews".
+ */
+export type RatingSummaryModel = RatedSummaryModel | EmptySummaryModel;
+
+/**
+ * Derives the whole render model from the counts in one pass.
+ *
+ * Why it exists: AC-7.3 says components hold no arithmetic beyond formatting.
+ * Without this, each component would call `totalOf`, `averageOf`, `roundScore`
+ * and so on itself, and could easily pass the unrounded average to `starFills`
+ * so the stars disagree with the text. Here the order is fixed in one place,
+ * the counts are validated once (fail fast, AC-2.3), and the result is frozen
+ * so components can only read it.
+ *
+ * @param counts - Reviews per star rating. Validated, so untyped input is safe.
+ * @param labelFor - Maps the rounded score to a label (AC-2.4). Defaults to the A-W6 bands.
+ * @throws RangeError when a count is invalid (see {@link validateCounts}).
+ */
+export function summarise(
+  counts: RatingCounts,
+  labelFor: (score: number) => string = defaultLabelFor,
+): RatingSummaryModel {
+  void counts;
+  void labelFor;
+  throw new Error('not implemented');
+}

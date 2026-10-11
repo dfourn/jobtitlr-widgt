@@ -4,6 +4,7 @@ import {
   roundScore,
   shareOf,
   starFills,
+  summarise,
   totalOf,
   validateCounts,
   type StarFills,
@@ -183,3 +184,84 @@ describe('validateCounts', () => {
     expect(() => validateCounts(input)).toThrow(TypeError);
   });
 });
+
+describe('summarise', () => {
+  it('AC-2.1 summarises the reference data in one model', () => {
+    const summary = summarise(REFERENCE);
+    expect(summary).toMatchObject({
+      kind: 'rated',
+      total: 1232,
+      score: 4.6,
+      label: 'Excellent',
+      fills: [1, 1, 1, 1, 0.6],
+    });
+    expect(summary.average).toBeCloseTo(4.608, 3);
+  });
+
+  it('AC-1.2 lists one row per rating, 5 down to 1, with the reference counts', () => {
+    const { rows } = summarise(REFERENCE);
+    expect(rows.map((row) => [row.rating, row.count])).toEqual([
+      [5, 952],
+      [4, 171],
+      [3, 55],
+      [2, 14],
+      [1, 40],
+    ]);
+  });
+
+  it('AC-1.3 gives each row its share of the total', () => {
+    const { rows } = summarise(REFERENCE);
+    expect(rows[0]?.share).toBeCloseTo(0.773, 3);
+    expect(rows[4]?.share).toBeCloseTo(40 / 1232, 10);
+  });
+
+  it('AC-2.2 is an empty summary with nothing filled and no NaN when there are no reviews', () => {
+    const summary = summarise(NO_REVIEWS);
+    expect(summary).toMatchObject({
+      kind: 'empty',
+      total: 0,
+      average: null,
+      score: null,
+      label: null,
+      fills: [0, 0, 0, 0, 0],
+    });
+    expect(summary.rows.map((row) => row.share)).toEqual([0, 0, 0, 0, 0]);
+    expect(collectNumbers(summary).some(Number.isNaN)).toBe(false);
+  });
+
+  it('AC-2.4 uses a custom labelFor, passing it the rounded score', () => {
+    const labelFor = vi.fn((score: number) => `Rated ${String(score)}`);
+    const summary = summarise(REFERENCE, labelFor);
+    expect(labelFor).toHaveBeenCalledWith(4.6);
+    expect(summary.label).toBe('Rated 4.6');
+  });
+
+  it('AC-2.4 does not call labelFor when there are no reviews', () => {
+    const labelFor = vi.fn(() => 'unused');
+    summarise(NO_REVIEWS, labelFor);
+    expect(labelFor).not.toHaveBeenCalled();
+  });
+
+  it('AC-2.3 fails fast on invalid counts', () => {
+    const counts = { ...REFERENCE, 2: -1 };
+    expect(() => summarise(counts)).toThrow(RangeError);
+    expect(() => summarise(counts)).toThrow(/2 stars/);
+  });
+
+  it('AC-7.3 returns a deeply frozen model that components can render as-is', () => {
+    const summary = summarise(REFERENCE);
+    expect(Object.isFrozen(summary)).toBe(true);
+    expect(Object.isFrozen(summary.fills)).toBe(true);
+    expect(Object.isFrozen(summary.rows)).toBe(true);
+    expect(summary.rows.every((row) => Object.isFrozen(row))).toBe(true);
+  });
+});
+
+/** Every number anywhere inside a JSON-like value. */
+function collectNumbers(value: unknown): number[] {
+  if (typeof value === 'number') return [value];
+  if (typeof value === 'object' && value !== null) {
+    return Object.values(value).flatMap(collectNumbers);
+  }
+  return [];
+}
