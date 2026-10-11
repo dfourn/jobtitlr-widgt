@@ -1,12 +1,11 @@
-import type { RatingCounts } from './types';
+import { STAR_RATINGS, type RatingCounts } from './types';
 
 /**
  * Total number of reviews.
  * @param counts - Reviews per star rating.
  */
 export function totalOf(counts: RatingCounts): number {
-  void counts;
-  throw new Error('not implemented');
+  return STAR_RATINGS.reduce((sum, star) => sum + counts[star], 0);
 }
 
 /**
@@ -15,6 +14,8 @@ export function totalOf(counts: RatingCounts): number {
  * @returns The unrounded mean, or `null` when there are no reviews (never NaN).
  */
 export function averageOf(counts: RatingCounts): number | null {
-  void counts;
-  throw new Error('not implemented');
+  const total = totalOf(counts);
+  if (total === 0) return null;
+  const weighted = STAR_RATINGS.reduce((sum, star) => sum + star * counts[star], 0);
+  return weighted / total;
 }
