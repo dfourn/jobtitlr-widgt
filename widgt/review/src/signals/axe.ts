@@ -1,92 +1,6 @@
 import type { ReadonlyFs } from '../io/fs';
-import { arrayOf, field, isRecord, numberOf, stringOf } from '../json';
+import { field, parseJson, stringOf } from '../json';
 import { axeScore, type AxeCounts } from '../score';
-import type { ContractResults } from './contract';
-
-const ZERO: AxeCounts = { critical: 0, serious: 0, moderate: 0, minor: 0 };
-
-function add(a: AxeCounts, b: AxeCounts): AxeCounts {
-  return {
-    critical: a.critical + b.critical,
-    serious: a.serious + b.serious,
-    moderate: a.moderate + b.moderate,
-    minor: a.minor + b.minor,
-  };
-}
-
-/** Counts from either `{critical, serious, moderate, minor}` or a raw axe result `{violations: [...]}`. */
-function countsOf(value: unknown): AxeCounts | null {
-  if (!isRecord(value)) return null;
-  if ('violations' in value) {
-    return arrayOf(value.violations).reduce<AxeCounts>((counts, violation) => {
-      const impact = stringOf(field(violation, 'impact'));
-      return impact === 'critical' || impact === 'serious' || impact === 'moderate' || impact === 'minor'
-        ? { ...counts, [impact]: counts[impact] + 1 }
-        : counts;
-    }, ZERO);
-  }
-  const keys = ['critical', 'serious', 'moderate', 'minor'] as const;
-  if (!keys.some((key) => key in value)) return null;
-  const [critical, serious, moderate, minor] = keys.map((key) => numberOf(value[key]) ?? 0);
-  return { critical: critical ?? 0, serious: serious ?? 0, moderate: moderate ?? 0, minor: minor ?? 0 };
-}
-
-export interface AxeSummary {
-  readonly counts: AxeCounts;
-  readonly states: readonly string[];
-}
-
-/**
- * Reads `axe.json`, written by the contract tests. Accepted shapes, so the
- * contract tests can stay simple:
- * - `{ "states": { "default": <counts or axe result>, "selected": ... } }`
- * - `[ { "state": "default", "violations": [...] }, ... ]`
- * - a single `<counts or axe result>`
- * where counts are `{critical, serious, moderate, minor}` and an axe result is
- * `{violations: [{impact}]}` (violated rules are counted, not nodes).
- * Counts are summed over states. Returns `null` for anything unrecognised.
- */
-export function parseAxeFile(json: unknown): AxeSummary | null {
-  const states = field(json, 'states');
-  if (isRecord(states)) {
-    return combine(Object.entries(states).map(([name, value]) => [name, countsOf(value)] as const));
-  }
-  if (Array.isArray(json)) {
-    return combine(json.map((value, index) => [stringOf(field(value, 'state')) ?? `state ${String(index + 1)}`, countsOf(value)] as const));
-  }
-  const single = countsOf(json);
-  return single === null ? null : { counts: single, states: ['default'] };
-}
-
-function combine(entries: readonly (readonly [string, AxeCounts | null])[]): AxeSummary | null {
-  const valid = entries.filter((entry): entry is readonly [string, AxeCounts] => entry[1] !== null);
-  if (valid.length === 0) return null;
-  return { counts: valid.reduce((sum, [, counts]) => add(sum, counts), ZERO), states: valid.map(([name]) => name) };
-}
-
-/**
- * The accessibility signal. Prefers `axe.json`; without it, falls back to the
- * pass rate of the AC-3.6 contract tests (the axe checks), and says so.
- */
-export function a11ySignal(
-  axe: AxeSummary | null,
-  contract: ContractResults | null,
-): { readonly value: number | null; readonly detail: string } {
-  if (axe !== null) {
-    const c = axe.counts;
-    return {
-      value: axeScore(c),
-      detail: `axe (${axe.states.join(', ')}): ${String(c.critical)} critical, ${String(c.serious)} serious, ${String(c.moderate)} moderate, ${String(c.minor)} minor`,
-    };
-  }
-  const cases = contract?.cases.filter((c) => /^AC-3\.6\b/.test(c.titlePath.at(-1) ?? '')) ?? [];
-  if (cases.length === 0) return { value: null, detail: 'axe.json not found and no AC-3.6 contract test ran' };
-  const passed = cases.filter((c) => c.passed).length;
-  return {
-    value: (passed / cases.length) * 100,
-    detail: `axe.json not found; fallback: ${String(passed)}/${String(cases.length)} AC-3.6 contract tests passed`,
-  };
-}
 
 /** The states the AC-3.6 contract tests check, one `<state>.json` each. */
 export const AXE_STATES = ['default', 'static', 'selected'] as const;
@@ -94,16 +8,68 @@ export const AXE_STATES = ['default', 'static', 'selected'] as const;
 /** Per-state counts read from the axe folder; `null` marks an unreadable file. */
 export type AxeStates = ReadonlyMap<string, AxeCounts | null>;
 
-/** Reads `<dir>/<state>.json` for every state file in `dir`. */
-export function readAxeStates(fs: ReadonlyFs, dir: string): AxeStates {
-  void fs;
-  void dir;
-  return new Map();
+const IMPACTS = ['critical', 'serious', 'moderate', 'minor'] as const;
+
+/**
+ * Counts the violated rules of one state file, `{state, violations: [{id,
+ * impact, nodes}]}`, by impact. A raw axe result has the same `violations`
+ * array, so it is accepted too. Rules are counted, not nodes; a rule with no
+ * impact counts for nothing. Returns `null` when there is no `violations` array.
+ */
+export function parseAxeState(json: unknown): AxeCounts | null {
+  const violations = field(json, 'violations');
+  if (!Array.isArray(violations)) return null;
+  const counts = { critical: 0, serious: 0, moderate: 0, minor: 0 };
+  for (const violation of violations) {
+    const impact = stringOf(field(violation, 'impact'));
+    const key = IMPACTS.find((name) => name === impact);
+    if (key !== undefined) counts[key] += 1;
+  }
+  return counts;
 }
 
-/** The accessibility signal: the mean per-state axe score over {@link AXE_STATES}. */
-export function axeSignal(states: AxeStates, source: string): { readonly value: number | null; readonly detail: string } {
-  void states;
-  void source;
-  return { value: null, detail: '' };
+/**
+ * Reads every `<dir>/<state>.json` (not nested folders). The state is named by
+ * the file. A file that is not JSON or has no `violations` array maps to `null`.
+ * Empty when the folder is missing.
+ */
+export function readAxeStates(fs: ReadonlyFs, dir: string): AxeStates {
+  const states = new Map<string, AxeCounts | null>();
+  for (const file of fs.listFiles(dir)) {
+    const name = file.slice(dir.length + 1);
+    if (name.includes('/') || !name.endsWith('.json')) continue;
+    states.set(name.slice(0, -'.json'.length), parseAxeState(parseJson(fs.readText(file))));
+  }
+  return states;
+}
+
+function describeCounts(counts: AxeCounts): string {
+  const parts = IMPACTS.filter((impact) => counts[impact] > 0).map((impact) => `${String(counts[impact])} ${impact}`);
+  return parts.length === 0 ? '' : ` (${parts.join(', ')})`;
+}
+
+/**
+ * The accessibility signal (AC-L9): the mean of the per-state axe scores over
+ * {@link AXE_STATES}. A state whose file is missing or unreadable scores 0 and
+ * is named, so an unrendered state cannot raise the mean. With no state files
+ * at all the value is 0, not missing; whether the widget rendered at all is the
+ * precondition's call (AC-L8).
+ */
+export function axeSignal(states: AxeStates, source: string): { readonly value: number; readonly detail: string } {
+  if (states.size === 0) return { value: 0, detail: `0: no axe results found in ${source}` };
+  const parts: string[] = [];
+  let sum = 0;
+  for (const state of AXE_STATES) {
+    const counts = states.get(state);
+    if (counts === undefined) {
+      parts.push(`${state} 0 (missing)`);
+    } else if (counts === null) {
+      parts.push(`${state} 0 (unreadable)`);
+    } else {
+      const value = axeScore(counts);
+      sum += value;
+      parts.push(`${state} ${String(value)}${describeCounts(counts)}`);
+    }
+  }
+  return { value: sum / AXE_STATES.length, detail: `axe, mean of ${AXE_STATES.join(', ')}: ${parts.join('; ')}` };
 }

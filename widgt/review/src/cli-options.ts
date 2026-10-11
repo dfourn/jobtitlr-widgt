@@ -17,7 +17,7 @@ export function pathsFrom(values: Readonly<Record<string, string | boolean | und
   return {
     ...base,
     contractResults: pick('contract-results', base.contractResults),
-    axeResults: pick('axe', base.axeResults),
+    axeDir: pick('axe', base.axeDir),
     visualScreenshot: pick('screenshot', base.visualScreenshot),
     reference: pick('reference', base.reference),
     spec: pick('spec', base.spec),

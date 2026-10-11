@@ -108,7 +108,7 @@ describe('AC-L1 runReview()', () => {
     expect(report.signals.unit.value).toBe(75);
     expect(report.signals.responsive.value).toBe(100);
     expect(report.signals.visual.value).toBe(100);
-    expect(report.signals.a11y.status).toBe('missing');
+    expect(report.signals.a11y).toMatchObject({ value: 0, status: 'ok', detail: '0: no axe results found in review/runs/latest/axe' });
     expect(report.signals.judge.status).toBe('off');
     // (50*25 + 75*15 + 0*20 + 100*15 + 100*10) / 85
     expect(report.total).toBe(57.4);

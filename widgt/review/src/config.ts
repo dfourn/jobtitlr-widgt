@@ -17,8 +17,8 @@ export interface ReviewPaths {
   readonly contractResults: string;
   /** Written by `vitest run --reporter=json`. */
   readonly vitestResults: string;
-  /** Optional; written by the contract tests when they record axe counts. */
-  readonly axeResults: string;
+  /** Folder of `<state>.json` axe results, one per state, written by the AC-3.6 contract tests. */
+  readonly axeDir: string;
   readonly screenshotsDir: string;
   /** The `?visual=1` screenshot at 401px, compared with the reference. */
   readonly visualScreenshot: string;
@@ -40,7 +40,7 @@ export function defaultPaths(latestDir = 'review/runs/latest'): ReviewPaths {
     latestDir,
     contractResults: `${latestDir}/contract-results.json`,
     vitestResults: `${latestDir}/vitest-results.json`,
-    axeResults: `${latestDir}/axe.json`,
+    axeDir: `${latestDir}/axe`,
     screenshotsDir: `${latestDir}/screenshots`,
     visualScreenshot: `${latestDir}/screenshots/visual-401.png`,
     reference: 'review/reference/widget-reference.png',

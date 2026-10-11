@@ -8,7 +8,7 @@ import { parseRubric } from './judge/rubric';
 import { field, numberOf, parseJson } from './json';
 import { rankFailures, renderReportMarkdown, type GateReport, type ReviewReport, type SignalReport } from './report';
 import { DEFAULT_WEIGHTS, score } from './score';
-import { a11ySignal, parseAxeFile } from './signals/axe';
+import { axeSignal, readAxeStates } from './signals/axe';
 import { contractSignal, parsePlaywrightReport, responsiveSignal } from './signals/contract';
 import { acCoverage } from './signals/coverage';
 import { parseVitestReport, unitPassRate } from './signals/unit';
@@ -68,8 +68,7 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   const unitResults = readJson(fs, paths.vitestResults, (json) => parseVitestReport(json, root));
   const unitRate = unitPassRate(unitResults);
   const coverage = acCoverage(fs, paths.spec);
-  const axe = readJson(fs, paths.axeResults, parseAxeFile);
-  const a11y = a11ySignal(axe, contractResults);
+  const a11y = axeSignal(readAxeStates(fs, paths.axeDir), paths.axeDir);
   const responsive = responsiveSignal(contractResults);
   const visualPaths = {
     screenshot: abs(root, paths.visualScreenshot),
@@ -78,9 +77,6 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   };
   const visual = collectVisual(visualPaths, root);
   notes.push(...visual.notes);
-  if (axe === null && fs.exists(paths.axeResults)) {
-    notes.push(`${paths.axeResults} has an unrecognised shape`);
-  }
 
   const judged = await runJudge(deps, paths);
   if (judged !== null) {
