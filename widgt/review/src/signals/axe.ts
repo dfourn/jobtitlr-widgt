@@ -1,3 +1,4 @@
+import { posix } from 'node:path';
 import type { ReadonlyFs } from '../io/fs';
 import { field, parseJson, stringOf } from '../json';
 import { axeScore, type AxeCounts } from '../score';
@@ -36,7 +37,8 @@ export function parseAxeState(json: unknown): AxeCounts | null {
 export function readAxeStates(fs: ReadonlyFs, dir: string): AxeStates {
   const states = new Map<string, AxeCounts | null>();
   for (const file of fs.listFiles(dir)) {
-    const name = file.slice(dir.length + 1);
+    // listFiles returns normalised paths, so `dir` may differ from their prefix (`runs/axe/`, `./runs/axe`).
+    const name = posix.relative(dir, file);
     if (name.includes('/') || !name.endsWith('.json')) continue;
     states.set(name.slice(0, -'.json'.length), parseAxeState(parseJson(fs.readText(file))));
   }
