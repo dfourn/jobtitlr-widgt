@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "scale": { "min": 0, "max": 3 },
+  "instructions": "Score each criterion 0-3 using the anchors. Judge only what the screenshots and the source under src/ show. Quote concrete evidence (a file and line, or what is visible in a named screenshot) for every score. When in doubt between two anchors, pick the lower one.",
+  "criteria": [
+    {
+      "id": "layout-fidelity",
+      "brief": ["B2.2"],
+      "ac": ["AC-1.1", "AC-1.2", "AC-6.3"],
+      "question": "Does the 401px screenshot reproduce the reference's composition: label, stars, score text, brand line and five breakdown rows, in that order, with similar alignment and spacing?",
+      "anchors": {
+        "0": "The widget is missing, broken, or its parts are in a different order or arrangement from the reference.",
+        "1": "All parts are present, but alignment, spacing or proportions differ clearly from the reference.",
+        "2": "Close to the reference; small differences in spacing or alignment are visible side by side.",
+        "3": "Hard to tell apart from the reference at a glance; the differences need a careful pixel-level look."
+      }
+    },
+    {
+      "id": "visual-detail",
+      "brief": ["B2.2", "B2.11"],
+      "ac": ["AC-1.3", "AC-1.4", "AC-6.1", "AC-6.2"],
+      "question": "Do the details match: Poppins type and weights, uppercase label, the yellow/grey palette, a partially filled fifth star, and bar lengths proportional to each rating's share?",
+      "anchors": {
+        "0": "Several details are wrong, for example a system font, wrong colours, whole stars only, or bars sized to the largest count.",
+        "1": "Most details are right, but at least one obvious detail is wrong.",
+        "2": "All details are right, with minor differences in weight, size or tint.",
+        "3": "Every listed detail matches the reference."
+      }
+    },
+    {
+      "id": "component-boundaries",
+      "brief": ["B2.4"],
+      "ac": ["AC-7.3", "AC-7.4"],
+      "question": "Are the components split along sensible responsibilities (for example rating label, star row, breakdown list and row), each with typed props, its own folder, CSS Module and tests, and with arithmetic kept in src/domain?",
+      "anchors": {
+        "0": "One large component, or logic and rendering tangled together.",
+        "1": "Some split, but boundaries are arbitrary, props are loosely typed, or components compute domain values.",
+        "2": "Clear components with typed props; one or two boundaries could be cleaner.",
+        "3": "Each component has a single responsibility, typed props and co-located styles and tests; domain logic is pure and separate."
+      }
+    },
+    {
+      "id": "readability",
+      "brief": ["B2.6"],
+      "ac": ["AC-7.1", "AC-7.2"],
+      "question": "Is the code easy to read: clear names, small functions, no dead code, comments only where they add information, consistent style?",
+      "anchors": {
+        "0": "Hard to follow: unclear names, long functions or dead code.",
+        "1": "Readable in places, with noticeable lapses.",
+        "2": "Readable throughout, with minor lapses.",
+        "3": "Reads like documentation; a new developer could change it confidently."
+      }
+    },
+    {
+      "id": "maintainability",
+      "brief": ["B2.6", "B2.4"],
+      "ac": ["AC-6.2", "AC-2.4"],
+      "question": "Is it cheap to change: design tokens in one place, no magic numbers scattered in CSS or TSX, configurable label bands and locale, tests that pin behaviour rather than markup?",
+      "anchors": {
+        "0": "Values are hard-coded throughout; a design change would touch many files.",
+        "1": "Some tokens or configuration, applied inconsistently.",
+        "2": "Mostly token-driven and configurable, with a few stray values.",
+        "3": "Tokens and configuration in one place; tests query by role and would survive a markup refactor."
+      }
+    },
+    {
+      "id": "semantics-accessibility",
+      "brief": ["B2.7", "B2.8"],
+      "ac": ["AC-3.1", "AC-3.3", "AC-3.4", "AC-3.7", "AC-4.7"],
+      "question": "Is the markup semantic (section, ul/li, button for interactive rows, img with alt), with ARIA only where it adds value, uppercase done in CSS, and a visible focus and selected state in the screenshots?",
+      "anchors": {
+        "0": "Div soup, or missing accessible names for the main parts.",
+        "1": "Partly semantic; ARIA is misused or a key name or state is missing.",
+        "2": "Semantic with sensible ARIA; one minor gap.",
+        "3": "Semantic throughout, ARIA used sparingly and correctly, focus and selected states clearly visible and not by colour alone."
+      }
+    }
+  ]
+}
