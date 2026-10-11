@@ -7,9 +7,7 @@ export const DEFAULT_LOCALE = 'en-GB';
  * @param locale - A BCP 47 locale tag.
  */
 export function formatCount(count: number, locale: string = DEFAULT_LOCALE): string {
-  void count;
-  void locale;
-  throw new Error('not implemented');
+  return new Intl.NumberFormat(locale).format(count);
 }
 
 /**
@@ -18,7 +16,5 @@ export function formatCount(count: number, locale: string = DEFAULT_LOCALE): str
  * @param locale - A BCP 47 locale tag.
  */
 export function formatPercent(share: number, locale: string = DEFAULT_LOCALE): string {
-  void share;
-  void locale;
-  throw new Error('not implemented');
+  return new Intl.NumberFormat(locale, { style: 'percent', maximumFractionDigits: 1 }).format(share);
 }
