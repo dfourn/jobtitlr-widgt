@@ -12,7 +12,8 @@
  * DOM hooks: `data-testid="product-rating"`, `data-testid="bar-fill-N"` and `data-testid="bar-track-N"`.
  */
 import { mkdirSync, readFileSync } from 'node:fs';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
+import { PNG } from 'pngjs';
 import { RUN_DIR, URLS, VIEWPORT_WIDTHS, openScenario, widgetOf } from './helpers';
 
 const SCREENSHOT_DIR = `${RUN_DIR}screenshots/`;
@@ -66,7 +67,22 @@ async function cssImagesOnPage(): Promise<string[]> {
   const PAINTING = ['background-image', 'border-image-source', 'list-style-image', 'content', 'filter', 'backdrop-filter'];
   const ALPHA_ONLY = ['mask-image', '-webkit-mask-box-image-source', 'clip-path'];
   const SVG_PAINT = ['fill', 'stroke'];
-  const PSEUDOS = [null, '::before', '::after', '::marker', '::first-letter', '::first-line'];
+  // Every pseudo-element Chromium can give a background image. Newer ones may be missing (spec 03 section 8);
+  // whatever is painted from outside the widget is caught by the hidden-widget check instead.
+  const PSEUDOS = [
+    null,
+    '::before',
+    '::after',
+    '::marker',
+    '::first-letter',
+    '::first-line',
+    '::backdrop',
+    '::file-selector-button',
+    '::details-content',
+    '::placeholder',
+    '::scroll-marker',
+    '::scroll-marker-group',
+  ];
   const here = new URL(location.href);
 
   const urlsIn = (value: string): string[] =>
@@ -150,6 +166,98 @@ function seeThroughAncestors(widget: Element): string[] {
     if (style.mixBlendMode !== 'normal') found.push(`${name} mix-blend-mode: ${style.mixBlendMode}`);
   }
   return found;
+}
+
+/** A node of the DOM tree as the Chrome DevTools Protocol reports it (`DOM.getDocument`), the parts read here. */
+interface DevToolsNode {
+  readonly localName: string;
+  readonly children?: readonly DevToolsNode[];
+  readonly shadowRoots?: readonly DevToolsNode[];
+  readonly shadowRootType?: string;
+  readonly contentDocument?: DevToolsNode;
+}
+
+/**
+ * The page's own shadow roots, open, closed or declarative. Page scripts and `querySelectorAll` cannot
+ * see inside a shadow root, so the other checks would miss a picture there; the DevTools Protocol sees
+ * them all. Chromium's own shadow roots (in form controls, for example) are `user-agent` and allowed.
+ */
+async function authorShadowRoots(page: Page): Promise<string[]> {
+  const session = await page.context().newCDPSession(page);
+  try {
+    const { root } = await session.send('DOM.getDocument', { depth: -1, pierce: true });
+    const found: string[] = [];
+    const walk = (node: DevToolsNode): void => {
+      for (const shadow of node.shadowRoots ?? []) {
+        if (shadow.shadowRootType !== 'user-agent') found.push(`<${node.localName}> has a ${shadow.shadowRootType ?? 'unknown'} shadow root`);
+        walk(shadow);
+      }
+      for (const child of node.children ?? []) walk(child);
+      if (node.contentDocument !== undefined) walk(node.contentDocument);
+    };
+    walk(root);
+    return found;
+  } finally {
+    await session.detach();
+  }
+}
+
+/** A rectangle in page pixels. */
+interface Rect {
+  readonly x: number;
+  readonly y: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
+ * Screenshots `clip` with one CSS property of `target` overridden (inline, `!important`), then puts the
+ * property back as it was. Used to hide the widget, or the logo, and see what is still painted.
+ */
+async function screenshotWith(page: Page, target: Locator, property: string, value: string, clip: Rect): Promise<PNG> {
+  const before = await target.evaluate(
+    (el, [name, override]) => {
+      const saved = { value: el.style.getPropertyValue(name), priority: el.style.getPropertyPriority(name) };
+      el.style.setProperty(name, override, 'important');
+      return saved;
+    },
+    [property, value] as const,
+  );
+  try {
+    return PNG.sync.read(await page.screenshot({ clip, fullPage: true, animations: 'disabled' }));
+  } finally {
+    await target.evaluate(
+      (el, [name, saved]) => {
+        if (saved.value === '') el.style.removeProperty(name);
+        else el.style.setProperty(name, saved.value, saved.priority);
+      },
+      [property, before] as const,
+    );
+  }
+}
+
+/** How many pixels of `image` are not pure white. */
+function nonWhitePixels(image: PNG): number {
+  let count = 0;
+  for (let at = 0; at < image.data.length; at += 4) {
+    if ((image.data[at] ?? 0) < 255 || (image.data[at + 1] ?? 0) < 255 || (image.data[at + 2] ?? 0) < 255) count += 1;
+  }
+  return count;
+}
+
+/** How many pixels differ between two same-size images outside `inside` (image coordinates). */
+function differencesOutside(a: PNG, b: PNG, inside: Rect | null): number {
+  let count = 0;
+  for (let y = 0; y < a.height; y += 1) {
+    for (let x = 0; x < a.width; x += 1) {
+      const within =
+        inside !== null && x >= inside.x && x < inside.x + inside.width && y >= inside.y && y < inside.y + inside.height;
+      if (within) continue;
+      const at = (y * a.width + x) * 4;
+      if ([0, 1, 2].some((channel) => a.data[at + channel] !== b.data[at + channel])) count += 1;
+    }
+  }
+  return count;
 }
 
 /** Reads width and height from a PNG's IHDR chunk. */
@@ -249,6 +357,29 @@ test.describe('AC-6 visual fidelity', () => {
         await widget.evaluate(seeThroughAncestors),
         'the widget and its ancestors are opaque, visible and not blended, so nothing behind it shows through',
       ).toEqual([]);
+      expect(
+        await authorShadowRoots(page),
+        'no shadow DOM anywhere on the page, where the checks above could not look',
+      ).toEqual([]);
+      const box = await widget.boundingBox();
+      expect(box, 'the widget has a layout box').not.toBeNull();
+      if (box !== null) {
+        const clip = { x: Math.floor(box.x), y: Math.floor(box.y), width: Math.ceil(box.width), height: Math.ceil(box.height) };
+        expect(
+          nonWhitePixels(await screenshotWith(page, widget, 'opacity', '0', clip)),
+          'with the widget hidden (opacity 0), its box is plain white: nothing from outside the widget (an overlay, a backdrop, a top-layer element) paints over it',
+        ).toBe(0);
+        const shown = PNG.sync.read(await page.screenshot({ clip, fullPage: true, animations: 'disabled' }));
+        const withoutLogo = await screenshotWith(page, images, 'visibility', 'hidden', clip);
+        const logoArea =
+          logoBox === null
+            ? null
+            : { x: logoBox.x - clip.x - 1, y: logoBox.y - clip.y - 1, width: logoBox.width + 2, height: logoBox.height + 2 };
+        expect(
+          differencesOutside(shown, withoutLogo, logoArea),
+          'the feefo logo paints only inside its own box (no overflow, shadow or filter beyond it)',
+        ).toBe(0);
+      }
       const visualTree = await widget.ariaSnapshot();
       const staticPage = await page.context().newPage();
       const staticTree = await (await openScenario(staticPage, URLS.static)).ariaSnapshot();
