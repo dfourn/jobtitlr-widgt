@@ -18,7 +18,7 @@ public final class TokenDiceScorer implements SimilarityScorer {
 
     /** Creates a scorer whose tokens must reach the default similarity of 0.8 to match. */
     public TokenDiceScorer() {
-        this.tokenThreshold = DEFAULT_TOKEN_THRESHOLD;
+        this(DEFAULT_TOKEN_THRESHOLD);
     }
 
     /**
@@ -27,7 +27,7 @@ public final class TokenDiceScorer implements SimilarityScorer {
      * @param tokenThreshold the similarity at or above which two tokens match
      */
     public TokenDiceScorer(double tokenThreshold) {
-        this.tokenThreshold = DEFAULT_TOKEN_THRESHOLD;
+        this.tokenThreshold = tokenThreshold;
     }
 
     /**
