@@ -110,6 +110,8 @@ It never contains whole logs, and **never the judge's prose**, so the generator 
 - **AC-L9** The a11y signal is the mean of per-state axe scores over the expected states (default, static, selected). A missing or unreadable state scores 0 and is named.
 - **AC-L10** The visual signal compares the widget's screenshot with the reference card on foreground pixels only, and scores 0, with a reason, unless the AC-6.3 widget-capture contract test passed in the same run.
 - **AC-L11** Unit AC coverage counts only AC IDs cited by passing unit tests, over the unit-testable IDs of spec 02 (AC-1.x, AC-2.x, AC-3.1-3.5, AC-4.1-4.6). A test or describe title cites only the first AC ID it starts with.
+- **AC-L12** A file that would change how the tools run (`.npmrc`, `vitest.config.*`, `vite.config.*` other than `.ts`, a PostCSS config) is refused. `node review/src/guard.ts`, run with plain Node and never through npm, names it and exits 1; on a clean workspace it reinstalls the dependencies from `package-lock.json`. The loop runs it before every review, and the external hand-off runs it before resuming. In a review, such a file fails G4 and no command runs.
+- **AC-L13** The `claude` and `glm` generators run in `dontAsk` mode: they may write `src/**` and `index.html`, and every tool or path not on the allow list is denied.
 
 ## 8. Known limitations (to discuss)
 - The reference is a 401x443 screenshot taken from a PDF, so pixel similarity is approximate. That is one reason its weight is low.
