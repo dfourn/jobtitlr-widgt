@@ -29,6 +29,11 @@ public final class Normaliser {
         this.minimumQuality = minimumQuality;
     }
 
+    /** Creates a normaliser with the brief's default configuration. */
+    public Normaliser() {
+        this(List.of("Architect"), new TokenDiceScorer(), 0.2);
+    }
+
     /**
      * Returns the best-matching normalised title for the given job title.
      *
