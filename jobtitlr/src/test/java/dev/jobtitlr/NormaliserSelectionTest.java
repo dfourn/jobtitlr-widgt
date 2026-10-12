@@ -1,6 +1,7 @@
 package dev.jobtitlr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,5 +71,26 @@ class NormaliserSelectionTest {
                         "bestMatch differs for \"" + input + "\"");
             }
         }
+    }
+
+    @Test
+    @DisplayName("AC-6.1 \"Chef\" has no match")
+    void chefHasNoMatch() {
+        assertTrue(new Normaliser().bestMatch("Chef").isEmpty(),
+                "Chef scores below the minimum quality against every default title");
+    }
+
+    @Test
+    @DisplayName("AC-6.1 a best q below minimumQuality is no match")
+    void bestBelowMinimumQualityIsNoMatch() {
+        Normaliser normaliser = new Normaliser(List.of("Architect", "Accountant"),
+                (input, candidate) -> 0.19, 0.2);
+        assertTrue(normaliser.bestMatch("Anything").isEmpty());
+    }
+
+    @Test
+    @DisplayName("AC-6.2 normalise returns the stripped input when nothing matches: \"  Chef  \" -> \"Chef\"")
+    void normaliseReturnsTheStrippedInputWhenNothingMatches() {
+        assertEquals("Chef", new Normaliser().normalise("  Chef  "));
     }
 }
