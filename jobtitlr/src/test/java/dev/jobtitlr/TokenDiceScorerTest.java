@@ -91,6 +91,36 @@ class TokenDiceScorerTest {
         }
     }
 
+    @Test
+    @DisplayName("AC-4.4 score(a, b) == score(b, a) for the worked examples and 1000 seeded random pairs")
+    void scoreIsSymmetric() {
+        String[][] workedExamples = {
+                {"Java engineer", "Software engineer"},
+                {"C# engineer", "Software engineer"},
+                {"Accountant", "Accountant"},
+                {"Chief Accountant", "Accountant"},
+                {"Acountant", "Accountant"},
+                {"Software enginer", "Software engineer"},
+                {"Quantity surveyors", "Quantity surveyor"},
+                {"Chef", "Architect"},
+                {"engineer engineer", "engineer"},
+                {"enginer engineer", "engineer"},
+                {"abcde", "abcdx"},
+                {"c#", "c+"}
+        };
+        for (String[] example : workedExamples) {
+            assertEquals(scorer.score(example[0], example[1]), scorer.score(example[1], example[0]),
+                    "not symmetric for \"" + example[0] + "\" and \"" + example[1] + "\"");
+        }
+        Random random = new Random(20261012L);
+        for (int i = 0; i < 1000; i++) {
+            String a = randomString(random);
+            String b = randomString(random);
+            assertEquals(scorer.score(a, b), scorer.score(b, a),
+                    "not symmetric for \"" + a + "\" and \"" + b + "\"");
+        }
+    }
+
     private static final String ALPHABET =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#+-() ";
 
