@@ -75,7 +75,8 @@ public final class Normaliser {
         MatchResult best = null;
         for (String title : titles) {
             double quality = scorer.score(input, title);
-            if (best == null || quality > best.quality()) {
+            boolean acceptable = quality > 0.0 && quality >= minimumQuality;
+            if (acceptable && (best == null || quality > best.quality())) {
                 best = new MatchResult(title, quality);
             }
         }
