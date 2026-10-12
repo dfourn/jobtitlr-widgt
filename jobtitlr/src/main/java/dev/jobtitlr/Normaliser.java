@@ -36,7 +36,7 @@ public final class Normaliser {
      * @return the best title, or the stripped input when there is no match
      */
     public String normalise(String jobTitle) {
-        return jobTitle;
+        return bestMatch(jobTitle).map(MatchResult::title).orElse(jobTitle.strip());
     }
 
     /**
@@ -46,7 +46,15 @@ public final class Normaliser {
      * @return the best match, or empty when no title reaches the minimum quality
      */
     public Optional<MatchResult> bestMatch(String jobTitle) {
-        return Optional.empty();
+        String input = jobTitle.strip();
+        MatchResult best = null;
+        for (String title : titles) {
+            double quality = scorer.score(input, title);
+            if (best == null || quality > best.quality()) {
+                best = new MatchResult(title, quality);
+            }
+        }
+        return Optional.ofNullable(best);
     }
 
     /**
