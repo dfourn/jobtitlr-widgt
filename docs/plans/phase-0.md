@@ -133,7 +133,7 @@ Measured by the planning pass with throwaway scripts (pinned Chromium, DPR 1, th
 - **`docs/brief/README.md`** "Measured": the card box.
 
 ## Risks and what I'd still distrust
-- **The lock checks itself.** An edited `checkContractLock` can return pass. It catches careless edits; the separation check and the generator's deny list catch deliberate ones.
+- **The lock checks itself.** An edited `checkContractLock` can return pass. It catches careless edits; the workspace guard, the generator's allow list and people reading the diff catch deliberate ones (see the pre-relock review below).
 - **External generator mode relies on honesty.**
 - **Rendering differs across operating systems and Chromium versions**, so visual numbers are only comparable on one machine.
 - **Pixels cannot see meaning.** Bars scaled to the largest count lose only 3 points; AC-1.3 is the real guard.
@@ -156,3 +156,10 @@ Deviations from the plan, made while implementing it:
 - **Review F5 (AC-L11)**: a test or describe title cites only the first AC ID it starts with.
 - **Review F6**: spec 03 and the harness README state the F5 rule.
 - **Review F7**: the precondition is described as "the widget's reference content rendered", and hardcoded reference markup meeting it is listed in spec 03 §8.
+
+Pre-relock review of the whole branch (2026-10-12), all fixed test-first before the relock:
+- **Finding 1 (AC-L12, AC-L13)**: files outside the lock could change how the tools run: a project `.npmrc` (`node-options` loads code into every `npm run`, verified with npm 10.9.8), a `vitest.config.*` or `vite.config.js` that wins over the locked `vite.config.ts`, a PostCSS config, or a patched `node_modules` (git-ignored). New `review/src/guard.ts`, run with plain Node, refuses those files and runs `npm ci --ignore-scripts`; the loop runs it before every review and the external hand-off before resuming; in a review the files fail G4 and no command runs. The `claude` and `glm` generators run in `dontAsk` mode and may write only `src/**` and `index.html`.
+- **Finding 2 (AC-L1, AC-L3)**: G4 ran before Vitest, so a unit test could rewrite the contract, the reference or the lock before Playwright read them. The contract tests, their signals and the judge now finish before Vitest runs, and the lock is re-hashed at the end and compared in memory with the start. The clearing step after Vitest is gone; the run folder is emptied at the start.
+- **Finding 3 (AC-6.3)**: three cheats painted the reference into the widget screenshot past every check: the logo `<img>` with `overflow: visible`, a popover `::backdrop`, and an overlay in a closed shadow root. Now the widget's box must be plain white with the widget at opacity 0, hiding the logo may change only pixels inside its box, the page may have no author shadow roots (DevTools Protocol), and more pseudo-elements are checked. In a scratch worktree an honest stub passed and eleven cheat stubs each failed with their own message.
+- **Finding 4 (AC-7.3)**: the domain guard bans dynamic `import()`.
+- **Finding 5**: spec 02 section 8 says "CSS image URLs", not "CSS images", since gradients are allowed.
