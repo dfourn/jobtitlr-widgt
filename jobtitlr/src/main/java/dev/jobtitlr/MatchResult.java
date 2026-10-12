@@ -19,5 +19,8 @@ public record MatchResult(String title, double quality) {
      */
     public MatchResult {
         Objects.requireNonNull(title, "title must not be null");
+        if (title.isBlank()) {
+            throw new IllegalArgumentException("title must not be blank");
+        }
     }
 }
