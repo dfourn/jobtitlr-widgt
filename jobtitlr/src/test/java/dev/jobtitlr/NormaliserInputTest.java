@@ -1,6 +1,7 @@
 package dev.jobtitlr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
@@ -50,5 +51,17 @@ class NormaliserInputTest {
     @DisplayName("AC-3.1 to AC-3.3 typos and plurals are tolerated")
     void typosAndPluralsAreTolerated(String id, String input, String expected) {
         assertEquals(expected, new Normaliser().normalise(input), "for \"" + input + "\"");
+    }
+
+    @Test
+    @DisplayName("AC-7.1 normalise(null) and bestMatch(null) throw NullPointerException naming jobTitle")
+    void nullInputThrowsNamingJobTitle() {
+        Normaliser normaliser = new Normaliser();
+        NullPointerException fromNormalise = assertThrows(NullPointerException.class,
+                () -> normaliser.normalise(null));
+        assertEquals("jobTitle must not be null", fromNormalise.getMessage());
+        NullPointerException fromBestMatch = assertThrows(NullPointerException.class,
+                () -> normaliser.bestMatch(null));
+        assertEquals("jobTitle must not be null", fromBestMatch.getMessage());
     }
 }
