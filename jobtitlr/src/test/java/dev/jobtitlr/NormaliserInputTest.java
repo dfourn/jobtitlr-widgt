@@ -33,4 +33,11 @@ class NormaliserInputTest {
     void punctuationSeparatesWords(String id, String input, String expected) {
         assertEquals(expected, new Normaliser().normalise(input), "for \"" + input + "\"");
     }
+
+    @Test
+    @DisplayName("AC-2.5 the title is returned in its configured form")
+    void titleIsReturnedInItsConfiguredForm() {
+        assertEquals("Software engineer", new Normaliser().normalise("software ENGINEER"));
+        assertEquals("iOS developer", new Normaliser(List.of("iOS developer")).normalise("IOS DEVELOPER"));
+    }
 }
