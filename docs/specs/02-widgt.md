@@ -107,7 +107,7 @@ Errors: the widget validates its counts and throws during render (fail fast, AC-
 ### AC-7 Code quality (B2.4, B2.5, B2.6)
 - **AC-7.1** TypeScript `strict`, with no `any` and no non-null `!` assertions in `src/`.
 - **AC-7.2** ESLint passes with no warnings.
-- **AC-7.3** Domain logic lives in `src/domain/`. Components hold no arithmetic beyond formatting. ESLint keeps React (`react`, `react-dom` and their subpaths) and `import.meta` out of `src/domain/`.
+- **AC-7.3** Domain logic lives in `src/domain/`. Components hold no arithmetic beyond formatting. ESLint keeps React (`react`, `react-dom` and their subpaths), `import.meta` and dynamic `import()` out of `src/domain/`.
 - **AC-7.4** Every component has typed props and lives in its own folder with its CSS Module and tests.
 
 ### AC-8 Delivery (B2.13, B2.15)
@@ -135,6 +135,6 @@ Errors: the widget validates its counts and throws during render (fail fast, AC-
 | `/` | Interactive mode: `onRatingSelect` is wired to page state. Below the widget, an element with `role="status"` and `data-testid="selection"` shows `Selected: none` or `Selected: N stars` (singular for 1). |
 | `/?interactive=0` | Static mode: no `onRatingSelect`. |
 | `/?empty=1` | All counts are 0, in interactive mode. |
-| `/?visual=1` | Static mode. Only the widget, on a white page with no margin, in a wrapper exactly **360px** wide (the reference card's width). The widget's accessibility tree matches `/?interactive=0`. The whole page shows no images other than the feefo logo (its only `<img>`): no CSS images except SVG masks and clips, and no embedded or SVG images. The widget and its ancestors are fully opaque and visible. Used for screenshot comparison with the card in the 401x443 reference. |
+| `/?visual=1` | Static mode. Only the widget, on a white page with no margin, in a wrapper exactly **360px** wide (the reference card's width). The widget's accessibility tree matches `/?interactive=0`. The whole page shows no images other than the feefo logo (its only `<img>`, which paints only inside its own box): no CSS image URLs except SVG masks and clips and references to gradients in the page (CSS gradients themselves are fine), no embedded or SVG images, and no shadow DOM. The widget and its ancestors are fully opaque and visible, and nothing outside the widget paints over its box. Used for screenshot comparison with the card in the 401x443 reference. |
 
 The widget is the only element with `data-testid="product-rating"`. The page has one `<main>` landmark, and its `<h1>` reads "widgt demo" (visually hidden in `?visual=1`).
