@@ -17,7 +17,7 @@ Status values: `assumed` (my call, not confirmed) · `confirmed` (by the brief o
 | A-J5 | Input is English, and tokenising is locale-independent (`Locale.ROOT`). | The brief only has English examples. `Locale.ROOT` avoids the Turkish-i bug. | Product: which markets? | Medium. Synonyms and seniority words would need a lexicon per language. |
 | A-J6 | Creating new categories from data is an **opt-in extension**. `new Normaliser().normalise(...)` behaves exactly as the brief describes. | The brief says "provided with a list", so a list that grows is a fair extension, but the basic contract must not change. | Product: who approves a new category? I'd propose a human-in-the-loop "provisional" state. | Low. It is a separate class that composes the core. |
 | A-J7 | A new category is only proposed once at least 3 unmatched titles cluster together, and it stays *provisional* until someone accepts it. | One-off typos and noise should not create categories. | Product / data governance | Low. `minSupport` is a configuration value. |
-| A-J8 | Default thresholds: token similarity >= 0.8 and overall quality q >= 0.2. | Tuned on the brief's examples and on our golden dataset (see spec 01 O-2, O-3). | Data: what is a false match worth compared with a missed match? | Low. Both are configurable, and the golden-dataset test shows what changes when they move. |
+| A-J8 | Default thresholds: token similarity >= 0.8 and overall quality q >= 0.2. | Chosen from the brief's examples and the worked examples in spec 01 §4 (see spec 01 O-2, O-3). | Data: what is a false match worth compared with a missed match? | Low. Both are configurable. |
 
 ## Part 2: widgt (product rating widget)
 
