@@ -23,6 +23,9 @@ final class Tokeniser {
      * @return the tokens in order, empty when the text holds no letters, digits, {@code #} or {@code +}
      */
     static List<String> tokenise(String text) {
-        return List.of(text.toLowerCase(Locale.ROOT).strip().split("\\s+"));
+        return List.of(text.toLowerCase(Locale.ROOT)
+                .replaceAll("[^\\p{L}\\p{N}]", " ")
+                .strip()
+                .split("\\s+"));
     }
 }
