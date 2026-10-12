@@ -1,6 +1,7 @@
 package dev.jobtitlr;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -59,8 +60,10 @@ public final class Normaliser {
      *
      * @param jobTitle the free-text job title; must not be null
      * @return the best title, or the stripped input when there is no match
+     * @throws NullPointerException if jobTitle is null
      */
     public String normalise(String jobTitle) {
+        requireJobTitle(jobTitle);
         return bestMatch(jobTitle).map(MatchResult::title).orElse(jobTitle.strip());
     }
 
@@ -69,8 +72,10 @@ public final class Normaliser {
      *
      * @param jobTitle the free-text job title; must not be null
      * @return the best match, or empty when no title reaches the minimum quality
+     * @throws NullPointerException if jobTitle is null
      */
     public Optional<MatchResult> bestMatch(String jobTitle) {
+        requireJobTitle(jobTitle);
         String input = jobTitle.strip();
         MatchResult best = null;
         for (String title : titles) {
@@ -90,5 +95,12 @@ public final class Normaliser {
      */
     public List<String> normalisedTitles() {
         return List.of();
+    }
+
+    /**
+     * Fails fast on a null job title with the message the spec requires.
+     */
+    private static void requireJobTitle(String jobTitle) {
+        Objects.requireNonNull(jobTitle, "jobTitle must not be null");
     }
 }
