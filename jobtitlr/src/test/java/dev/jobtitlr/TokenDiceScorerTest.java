@@ -1,6 +1,7 @@
 package dev.jobtitlr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Random;
@@ -127,6 +128,21 @@ class TokenDiceScorerTest {
         TokenDiceScorer strict = new TokenDiceScorer(0.9);
         assertEquals(0.9, strict.score("Acountant", "Accountant"), 1e-9);
         assertEquals(0.0, strict.score("enginer", "engineer"), 1e-9);
+    }
+
+    @ParameterizedTest(name = "{0} rejects the token threshold {1}")
+    @CsvSource({
+            "AC-3.4, -0.01",
+            "AC-3.4, 1.01",
+            "AC-3.4, NaN",
+            "AC-3.4, Infinity",
+            "AC-3.4, -Infinity"
+    })
+    @DisplayName("AC-3.4 a token threshold outside [0, 1] or NaN is rejected")
+    void rejectsTokenThresholdOutsideUnitInterval(String id, double tokenThreshold) {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new TokenDiceScorer(tokenThreshold));
+        assertEquals("tokenThreshold must be within [0, 1]: " + tokenThreshold, exception.getMessage());
     }
 
     private static final String ALPHABET =
