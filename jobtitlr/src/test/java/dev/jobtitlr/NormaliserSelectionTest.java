@@ -50,4 +50,25 @@ class NormaliserSelectionTest {
         Normaliser normaliser = new Normaliser(List.of("A", "B"), (input, candidate) -> 0.42, 0.2);
         assertEquals(0.42, normaliser.bestMatch("anything").orElseThrow().quality());
     }
+
+    /** The brief's four inputs (spec 01, section 4). */
+    private static final String[] BRIEF_INPUTS = {
+            "Java engineer", "C# engineer", "Accountant", "Chief Accountant"
+    };
+
+    @Test
+    @DisplayName("AC-5.3 the same input and configuration always give the same result")
+    void resultsAreDeterministic() {
+        List<String> titles = List.of("Architect", "Software engineer", "Quantity surveyor", "Accountant");
+        Normaliser first = new Normaliser(titles, new TokenDiceScorer(), 0.2);
+        Normaliser second = new Normaliser(titles, new TokenDiceScorer(), 0.2);
+        for (int i = 0; i < 100; i++) {
+            for (String input : BRIEF_INPUTS) {
+                assertEquals(first.normalise(input), second.normalise(input),
+                        "normalise differs for \"" + input + "\"");
+                assertEquals(first.bestMatch(input), second.bestMatch(input),
+                        "bestMatch differs for \"" + input + "\"");
+            }
+        }
+    }
 }
