@@ -39,4 +39,10 @@ class TokenDiceScorerTest {
     void softwareEnginerScoresFifteenSixteenths() {
         assertEquals(0.9375, scorer.score("Software enginer", "Software engineer"), 1e-9);
     }
+
+    @Test
+    @DisplayName("AC-3.3 \"Quantity surveyors\" vs \"Quantity surveyor\" scores 17/18")
+    void quantitySurveyorsScoresSeventeenEighteenths() {
+        assertEquals(0.9444444444444444, scorer.score("Quantity surveyors", "Quantity surveyor"), 1e-9);
+    }
 }
