@@ -32,4 +32,18 @@ class LevenshteinTest {
     void workedValues(String id, String a, String b, double similarity) {
         assertEquals(similarity, Levenshtein.similarity(a, b), 1e-9);
     }
+
+    @ParameterizedTest(name = "{0} distance and similarity of {1} and {2} are symmetric")
+    @CsvSource({
+            "AC-3.5, kitten, sitting",
+            "AC-3.5, acountant, accountant",
+            "AC-3.5, surveyors, surveyor",
+            "AC-3.5, c#, c+",
+            "AC-3.5, '', abc"
+    })
+    @DisplayName("AC-3.5 distance and similarity are symmetric")
+    void distanceAndSimilarityAreSymmetric(String id, String a, String b) {
+        assertEquals(Levenshtein.distance(a, b), Levenshtein.distance(b, a));
+        assertEquals(Levenshtein.similarity(a, b), Levenshtein.similarity(b, a));
+    }
 }
