@@ -22,6 +22,15 @@ public final class TokenDiceScorer implements SimilarityScorer {
     }
 
     /**
+     * Creates a scorer with a custom token threshold.
+     *
+     * @param tokenThreshold the similarity at or above which two tokens match
+     */
+    public TokenDiceScorer(double tokenThreshold) {
+        this.tokenThreshold = DEFAULT_TOKEN_THRESHOLD;
+    }
+
+    /**
      * Scores the similarity between an input and a candidate title. Tokens
      * are paired one-to-one, best pairs first, and q is twice the sum of the
      * paired similarities over the total token count; q is 0.0 when either

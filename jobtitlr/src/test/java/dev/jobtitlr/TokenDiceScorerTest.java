@@ -121,6 +121,14 @@ class TokenDiceScorerTest {
         }
     }
 
+    @Test
+    @DisplayName("AC-3.4 the token threshold can be configured")
+    void tokenThresholdCanBeConfigured() {
+        TokenDiceScorer strict = new TokenDiceScorer(0.9);
+        assertEquals(0.9, strict.score("Acountant", "Accountant"), 1e-9);
+        assertEquals(0.0, strict.score("enginer", "engineer"), 1e-9);
+    }
+
     private static final String ALPHABET =
             "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#+-() ";
 
