@@ -3,6 +3,7 @@ package dev.jobtitlr;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Sørensen-Dice score over tokens, weighted by per-token Levenshtein
@@ -23,7 +24,8 @@ public final class TokenDiceScorer implements SimilarityScorer {
     /**
      * Scores the similarity between an input and a candidate title. Tokens
      * are paired one-to-one, best pairs first, and q is twice the sum of the
-     * paired similarities over the total token count.
+     * paired similarities over the total token count; q is 0.0 when either
+     * side has no tokens.
      *
      * @param input the free-text job title; must not be null
      * @param candidate the configured normalised title; must not be null
@@ -31,8 +33,13 @@ public final class TokenDiceScorer implements SimilarityScorer {
      */
     @Override
     public double score(String input, String candidate) {
+        Objects.requireNonNull(input, "input must not be null");
+        Objects.requireNonNull(candidate, "candidate must not be null");
         List<String> inputTokens = Tokeniser.tokenise(input);
         List<String> candidateTokens = Tokeniser.tokenise(candidate);
+        if (inputTokens.isEmpty() || candidateTokens.isEmpty()) {
+            return 0.0;
+        }
         List<TokenPair> pairs = matchingPairs(inputTokens, candidateTokens);
         boolean[] usedInput = new boolean[inputTokens.size()];
         boolean[] usedCandidate = new boolean[candidateTokens.size()];
