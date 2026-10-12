@@ -2,13 +2,18 @@ import { glmEnv, parseClaudeJson } from '../io/claude-cli';
 import type { CommandRunner } from '../io/runner';
 import type { GenerateContext, GenerateOutcome, Generator } from './runner';
 
-/** Tools the generator may use without asking: read, edit, and the project's own checks. */
+/**
+ * The only tools the generator may use (AC-L13; `dontAsk` denies everything else): read anything,
+ * write the widget's own files (`src/**` and `index.html`), and run the project's own checks.
+ */
 export const GENERATOR_ALLOWED_TOOLS: readonly string[] = [
   'Read',
   'Glob',
   'Grep',
-  'Edit',
-  'Write',
+  'Edit(src/**)',
+  'Write(src/**)',
+  'Edit(index.html)',
+  'Write(index.html)',
   'Bash(npm test)',
   'Bash(npm test *)',
   'Bash(npm run typecheck)',
@@ -18,10 +23,13 @@ export const GENERATOR_ALLOWED_TOOLS: readonly string[] = [
 ];
 
 /**
- * Denied even if allowed elsewhere. `review/**` holds the contract, the
- * thresholds and the reports (the judge's prose is in runs/); the configs
- * decide what the gates check. This is the tool-level guard; G4 and G5 are
- * the check that does not depend on it.
+ * Denied even if allowed elsewhere; `dontAsk` already denies anything not
+ * allowed, so this list states the most important refusals explicitly.
+ * `review/**` holds the contract, the thresholds and the reports (the judge's
+ * prose is in runs/); the configs decide what the gates check; a `.npmrc` or
+ * a patched `node_modules` would change how the tools run (AC-L12). This is
+ * the tool-level guard; G4, G5 and the workspace guard are the checks that do
+ * not depend on it.
  */
 export const GENERATOR_DISALLOWED_TOOLS: readonly string[] = [
   'Edit(review/**)',
@@ -36,6 +44,10 @@ export const GENERATOR_DISALLOWED_TOOLS: readonly string[] = [
   'Write(eslint.config.js)',
   'Write(vite.config.ts)',
   'Write(tsconfig*.json)',
+  'Edit(node_modules/**)',
+  'Write(node_modules/**)',
+  'Edit(.npmrc)',
+  'Write(.npmrc)',
   'Bash(git *)',
   'Bash(npm run review*)',
 ];
@@ -50,9 +62,9 @@ export interface ClaudeCliGeneratorOptions {
 
 /**
  * Edits the widget with headless Claude Code: `claude -p` with the prompt on
- * stdin, edits auto-accepted, anything not on the allow list denied rather
- * than prompted, and `review/**` off limits. Flags checked against
- * claude 2.1.296 --help.
+ * stdin, in `dontAsk` mode, so anything not on the allow list is denied
+ * rather than prompted (AC-L13), and `review/**` off limits. Flags checked
+ * against claude 2.1.296 --help.
  */
 export class ClaudeCliGenerator implements Generator {
   readonly name: string;
@@ -91,7 +103,7 @@ export class ClaudeCliGenerator implements Generator {
       '--output-format',
       'json',
       '--permission-mode',
-      'acceptEdits',
+      'dontAsk',
       '--permission-prompts',
       'none',
       '--allowedTools',
@@ -147,8 +159,9 @@ export function externalInstructions(context: GenerateContext): string {
     `Iteration ${iteration} is waiting for an external agent.`,
     `  1. Give the agent the prompt in ${context.promptPath}. It may edit src/ (and index.html) only.`,
     '  2. When it has finished, from widgt/ run:',
-    '       npm run loop -- --generator external --resume --note "<one line on what changed>"',
-    '     That reviews and commits this iteration, then writes the next prompt.',
+    '       node review/src/guard.ts && npm run loop -- --generator external --resume --note "<one line on what changed>"',
+    '     The guard runs first, with plain Node: it refuses files such as a .npmrc that npm would load,',
+    '     and reinstalls node_modules. Then the loop reviews and commits this iteration and writes the next prompt.',
   ].join('\n');
 }
 

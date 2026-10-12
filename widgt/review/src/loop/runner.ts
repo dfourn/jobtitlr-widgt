@@ -105,7 +105,8 @@ export async function runLoop(deps: LoopDeps, options: LoopOptions, initial: Loo
   let state = initial;
 
   const reviewAndCommit = async (iteration: number, summary: string, costUsd: number | null): Promise<void> => {
-    deps.log(`review: iteration ${pad2(iteration)}`);
+    deps.log(`guard and review: iteration ${pad2(iteration)}`);
+    await deps.guard();
     const report = await deps.review(iteration);
     await deps.archive(iteration);
     const record = toRecord(report, iteration, summary, costUsd);

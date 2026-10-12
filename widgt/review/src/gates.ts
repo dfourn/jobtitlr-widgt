@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { ForbiddenFile } from './guard';
 import type { ReadonlyFs } from './io/fs';
 import type { CommandRunner } from './io/runner';
 import type { GateId, GateResult } from './types';
@@ -143,6 +144,16 @@ function diffLocks(expected: ContractLock, actual: ContractLock): LockDiff {
 export function lockChangesSince(fs: ReadonlyFs, before: ContractLock, scope: LockScope = DEFAULT_LOCK_SCOPE): string[] {
   const diff = diffLocks(before, computeLock(fs, scope));
   return [...diff.changed, ...diff.added, ...diff.removed].sort();
+}
+
+/**
+ * G4 with the files that would change how the tools run (AC-L12, `review/src/guard.ts`): the gate
+ * fails when there are any.
+ */
+export function withForbiddenFiles(gate: GateResult, forbidden: readonly ForbiddenFile[]): GateResult {
+  if (forbidden.length === 0) return gate;
+  const note = `files that would change how the tools run (AC-L12): ${forbidden.map((file) => file.name).join(', ')}`;
+  return { ...gate, passed: false, detail: gate.passed ? note : `${gate.detail}; ${note}` };
 }
 
 /** G4 with the files that changed during the review: the gate fails when there are any. */

@@ -8,7 +8,9 @@ import {
   lockChangesSince,
   runCommandGates,
   withChangesDuringReview,
+  withForbiddenFiles,
 } from './gates';
+import { forbiddenFilesIn, type ForbiddenFile } from './guard';
 import type { ReadonlyFs } from './io/fs';
 import type { CommandRunner } from './io/runner';
 import type { Judge, JudgeResult } from './judge/judge';
@@ -49,7 +51,7 @@ export interface ReviewOptions {
  * signals in the report; only a bug in the harness itself throws.
  */
 export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promise<ReviewReport> {
-  const { root, fs, runner, log } = deps;
+  const { root, fs, log } = deps;
   const paths = options.paths;
   const notes: string[] = [];
   const previousCount = options.baselineReport === null ? null : readTestCount(fs, options.baselineReport);
@@ -61,6 +63,10 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   const lockedAtStart = computeLock(fs);
   const lockGateAtStart = checkContractLock(fs, paths.lockFile);
   const patternGate = checkForbiddenPatterns(fs);
+  // AC-L12: with such a file, any npm or Node command could run code that is not the widget's, so none runs.
+  const forbiddenAtStart = forbiddenFilesIn((name) => fs.exists(name));
+  const runner = forbiddenAtStart.length === 0 ? deps.runner : REFUSING_RUNNER;
+  if (forbiddenAtStart.length > 0) notes.push(`no command ran: ${forbiddenAtStart.map((file) => file.name).join(', ')} (AC-L12)`);
 
   log('gates: typecheck, lint, build');
   const commandGates = await runCommandGates(runner);
@@ -92,7 +98,7 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   notes.push(...(collected?.notes ?? []));
   const visual = requirePresence(scoreable, collected ?? { value: null, detail: 'not collected' });
 
-  const judged = await runJudge(deps, paths);
+  const judged = forbiddenAtStart.length === 0 ? await runJudge(deps, paths) : null;
   if (judged !== null) {
     writeFileSync(abs(root, `${paths.latestDir}/judge.json`), `${JSON.stringify(judged, null, 2)}\n`);
     notes.push(...judged.errors.map((error) => `judge ${deps.judge.name}: ${error}`));
@@ -103,7 +109,11 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   const unitResults = readJson(fs, paths.vitestResults, (json) => parseVitestReport(json, root));
   const unitRate = unitPassRate(unitResults);
   const coverage = acCoverage(fs, paths.spec, unitResults);
-  const lockGate = withChangesDuringReview(lockGateAtStart, lockChangesSince(fs, lockedAtStart));
+  const forbidden = unionByName(forbiddenAtStart, forbiddenFilesIn((name) => fs.exists(name)));
+  const lockGate = withForbiddenFiles(
+    withChangesDuringReview(lockGateAtStart, lockChangesSince(fs, lockedAtStart)),
+    forbidden,
+  );
 
   const unitValue =
     unitRate.value === null && coverage.value === null ? null : ((unitRate.value ?? 0) + (coverage.value ?? 0)) / 2;
@@ -161,6 +171,15 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   writeFileSync(abs(root, `${paths.latestDir}/report.json`), `${JSON.stringify(report, null, 2)}\n`);
   writeFileSync(abs(root, `${paths.latestDir}/report.md`), renderReportMarkdown(report));
   return report;
+}
+
+/** Stands in for the real runner when the workspace has forbidden files: runs nothing, fails everything. */
+const REFUSING_RUNNER: CommandRunner = {
+  run: () => Promise.resolve({ code: 1, stdout: '', stderr: 'not run: the workspace has forbidden files (AC-L12)' }),
+};
+
+function unionByName(a: readonly ForbiddenFile[], b: readonly ForbiddenFile[]): ForbiddenFile[] {
+  return [...a, ...b.filter((file) => !a.some((other) => other.name === file.name))];
 }
 
 async function runJudge(deps: ReviewDeps, paths: ReviewPaths): Promise<JudgeResult | null> {
