@@ -3,6 +3,7 @@ package dev.jobtitlr;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -19,5 +20,11 @@ class TokenDiceScorerTest {
     @DisplayName("AC-4.2 identical titles after tokenising score 1.0")
     void identicalTitlesScoreOne(String id, String input, String candidate, double expected) {
         assertEquals(expected, scorer.score(input, candidate), 1e-9);
+    }
+
+    @Test
+    @DisplayName("AC-4.3 titles sharing no matching tokens score 0.0")
+    void titlesSharingNoMatchingTokensScoreZero() {
+        assertEquals(0.0, scorer.score("Chef", "Architect"), 1e-9);
     }
 }
