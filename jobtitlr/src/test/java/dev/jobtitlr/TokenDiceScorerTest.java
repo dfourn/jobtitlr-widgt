@@ -1,6 +1,9 @@
 package dev.jobtitlr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.Random;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -74,5 +77,29 @@ class TokenDiceScorerTest {
         assertEquals(0.0, scorer.score("!!!", "Architect"));
         assertEquals(0.0, scorer.score("Architect", "###"));
         assertEquals(0.0, scorer.score("...", "!!!"));
+    }
+
+    @Test
+    @DisplayName("AC-4.1 q is within [0, 1] for 1000 seeded random pairs")
+    void qIsWithinUnitIntervalForRandomPairs() {
+        Random random = new Random(20261012L);
+        for (int i = 0; i < 1000; i++) {
+            String a = randomString(random);
+            String b = randomString(random);
+            double q = scorer.score(a, b);
+            assertTrue(q >= 0.0 && q <= 1.0, "q out of range for \"" + a + "\" and \"" + b + "\": " + q);
+        }
+    }
+
+    private static final String ALPHABET =
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#+-() ";
+
+    private static String randomString(Random random) {
+        int length = 1 + random.nextInt(20);
+        StringBuilder text = new StringBuilder(length);
+        for (int i = 0; i < length; i++) {
+            text.append(ALPHABET.charAt(random.nextInt(ALPHABET.length())));
+        }
+        return text.toString();
     }
 }
