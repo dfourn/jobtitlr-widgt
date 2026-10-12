@@ -43,4 +43,15 @@ class TokeniserTest {
     void keepsHashAndPlus(String id, String text, String expected) {
         assertIterableEquals(List.of(expected.split(" ")), Tokeniser.tokenise(text));
     }
+
+    @ParameterizedTest(name = "{0} {1} -> []")
+    @CsvSource({
+            "AC-7.3, '!!!'",
+            "AC-7.3, ' - '",
+            "AC-7.3, '...'"
+    })
+    @DisplayName("AC-7.3 returns no tokens for punctuation only")
+    void returnsNoTokensForPunctuationOnly(String id, String text) {
+        assertIterableEquals(List.of(), Tokeniser.tokenise(text));
+    }
 }
