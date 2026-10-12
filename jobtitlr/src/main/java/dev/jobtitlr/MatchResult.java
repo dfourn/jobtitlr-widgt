@@ -22,5 +22,8 @@ public record MatchResult(String title, double quality) {
         if (title.isBlank()) {
             throw new IllegalArgumentException("title must not be blank");
         }
+        if (!(quality >= 0.0 && quality <= 1.0)) {
+            throw new IllegalArgumentException("quality must be within [0, 1]: " + quality);
+        }
     }
 }
