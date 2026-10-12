@@ -67,4 +67,12 @@ class TokenDiceScorerTest {
     void pairsAreAssignedBestFirst() {
         assertEquals(2.0 / 3.0, scorer.score("enginer engineer", "engineer"), 1e-9);
     }
+
+    @Test
+    @DisplayName("AC-4.1 punctuation-only strings score 0.0, not NaN")
+    void punctuationOnlyStringsScoreZeroNotNaN() {
+        assertEquals(0.0, scorer.score("!!!", "Architect"));
+        assertEquals(0.0, scorer.score("Architect", "###"));
+        assertEquals(0.0, scorer.score("...", "!!!"));
+    }
 }
