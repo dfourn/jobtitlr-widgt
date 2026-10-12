@@ -44,6 +44,12 @@ export default tseslint.config(
           message:
             'src/domain must stay framework-free (AC-7.3): import.meta ties it to Vite or the module system. Pass the value in from the caller instead.',
         },
+        {
+          // no-restricted-imports only sees static imports, and a computed name cannot be checked at all.
+          selector: 'ImportExpression',
+          message:
+            'src/domain must stay framework-free (AC-7.3): it needs no dynamic import(), which could load React or Vite code. Use a static import.',
+        },
       ],
     },
   },
