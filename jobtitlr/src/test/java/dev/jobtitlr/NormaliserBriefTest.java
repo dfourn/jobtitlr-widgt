@@ -2,6 +2,8 @@ package dev.jobtitlr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+import java.util.List;
+
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,5 +31,14 @@ class NormaliserBriefTest {
         Normaliser n = new Normaliser();
         String normalisedTitle = n.normalise(jt);
         assertEquals("Software engineer", normalisedTitle);
+    }
+
+    @Test
+    @DisplayName("AC-5.2 with the default scorer, \"Engineer\" picks the first of [Software engineer, Hardware engineer]")
+    void engineerPicksTheFirstOfTwoEqualTitles() {
+        assertEquals("Software engineer",
+                new Normaliser(List.of("Software engineer", "Hardware engineer")).normalise("Engineer"));
+        assertEquals("Hardware engineer",
+                new Normaliser(List.of("Hardware engineer", "Software engineer")).normalise("Engineer"));
     }
 }
