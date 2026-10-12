@@ -15,4 +15,10 @@ class TokeniserTest {
     void lowercasesWithLocaleRoot() {
         assertIterableEquals(List.of("java", "engineer"), Tokeniser.tokenise("JAVA ENGINEER"));
     }
+
+    @Test
+    @DisplayName("AC-2.2 ignores leading, trailing and repeated whitespace")
+    void ignoresWhitespace() {
+        assertIterableEquals(List.of("java", "engineer"), Tokeniser.tokenise("  java   engineer "));
+    }
 }
