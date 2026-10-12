@@ -61,4 +61,10 @@ class TokenDiceScorerTest {
     void eachTokenIsPairedAtMostOnce() {
         assertEquals(2.0 / 3.0, scorer.score("engineer engineer", "engineer"), 1e-9);
     }
+
+    @Test
+    @DisplayName("AC-4.6 pairs are assigned best first: \"enginer engineer\" vs \"engineer\" scores 2/3")
+    void pairsAreAssignedBestFirst() {
+        assertEquals(2.0 / 3.0, scorer.score("enginer engineer", "engineer"), 1e-9);
+    }
 }
