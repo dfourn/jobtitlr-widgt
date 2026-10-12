@@ -7,7 +7,7 @@ import { defaultPaths, type ReviewPaths } from './config';
 import { computeLock, serialiseLock } from './gates';
 import { nodeFs } from './io/fs';
 import type { CommandRunner } from './io/runner';
-import { NoJudge } from './judge/judge';
+import { NoJudge, type Judge, type JudgeResult } from './judge/judge';
 import type { ReviewReport } from './report';
 import { runReview } from './run-review';
 import { writePng } from './signals/visual';
@@ -30,6 +30,8 @@ interface FakeToolsOptions {
   readonly e2eWritesNothing: boolean;
   /** Receives, when the contract tests start, which forgeable files still exist. */
   readonly seenAtE2e: Map<string, boolean>;
+  /** Runs while Vitest runs, as a unit test with file access might. */
+  readonly tamper: () => void;
 }
 
 /**
@@ -42,6 +44,7 @@ function fakeTools(root: string, calls: string[], options: FakeToolsOptions): Co
     run: (command, args, runOptions) => {
       calls.push([command, ...args].join(' '));
       const outputFile = args.find((arg) => arg.startsWith('--outputFile='));
+      if (outputFile !== undefined) options.tamper();
       if (outputFile !== undefined && options.forge) {
         for (const file of FORGEABLE) {
           mkdirSync(join(latest, file, '..'), { recursive: true });
@@ -128,26 +131,53 @@ describe('AC-L1 runReview()', () => {
     rendered = true,
     tools: Partial<FakeToolsOptions> = {},
     paths: ReviewPaths = defaultPaths(),
+    judge: (calls: readonly string[]) => Judge = () => new NoJudge(),
   ): Promise<{ report: ReviewReport; calls: string[]; seenAtE2e: Map<string, boolean> }> {
     const calls: string[] = [];
     const seenAtE2e = new Map<string, boolean>();
-    const options: FakeToolsOptions = { rendered, captured: true, forge: false, e2eWritesNothing: false, seenAtE2e, ...tools };
+    const options: FakeToolsOptions = {
+      rendered,
+      captured: true,
+      forge: false,
+      e2eWritesNothing: false,
+      seenAtE2e,
+      tamper: () => undefined,
+      ...tools,
+    };
     const report = await runReview(
-      { root, fs: nodeFs(root), runner: fakeTools(root, calls, options), judge: new NoJudge(), now: () => new Date('2026-10-11T12:00:00Z'), log: () => undefined },
+      { root, fs: nodeFs(root), runner: fakeTools(root, calls, options), judge: judge(calls), now: () => new Date('2026-10-11T12:00:00Z'), log: () => undefined },
       { paths, iteration: null, baselineReport: 'review/runs/latest/report.json' },
     );
     return { report, calls, seenAtE2e };
   }
 
-  it('AC-L1 runs the gates, Vitest and the contract tests without any AI', async () => {
+  it('AC-L1 runs the gates, then the contract tests, then Vitest, without any AI', async () => {
     const { calls } = await review();
     expect(calls).toEqual([
       'npm run typecheck',
       'npm run lint',
       'npm run build',
-      `npx --no-install vitest run --reporter=json --outputFile=${join(root, 'review', 'runs', 'latest', 'vitest-results.json')}`,
       'npm run test:e2e',
+      `npx --no-install vitest run --reporter=json --outputFile=${join(root, 'review', 'runs', 'latest', 'vitest-results.json')}`,
     ]);
+  });
+
+  it('AC-L1 the judge runs before any unit test can touch the screenshots', async () => {
+    writeFileSync(
+      join(root, 'review', 'rubric.json'),
+      JSON.stringify({ criteria: [{ id: 'layout', question: 'q', anchors: { 0: 'a', 1: 'b', 2: 'c', 3: 'd' } }] }),
+    );
+    let seen: string[] = [];
+    const spy = (calls: readonly string[]): Judge => ({
+      name: 'claude',
+      evaluate: (): Promise<JudgeResult | null> => {
+        seen = [...calls];
+        return Promise.resolve(null);
+      },
+    });
+    await review(true, {}, defaultPaths(), spy);
+    expect(seen).toContain('npm run test:e2e');
+    expect(seen.filter((call) => call.includes('vitest'))).toEqual([]);
   });
 
   it('AC-L1 writes report.json and report.md with every signal scored', async () => {
@@ -192,10 +222,20 @@ describe('AC-L1 runReview()', () => {
     { ac: 'AC-L9', file: 'axe/selected.json' },
     { ac: 'AC-L10', file: 'screenshots/visual-widget.png' },
     { ac: 'AC-L8', file: 'contract-results.json' },
-  ])('$ac a forged $file is gone before the contract tests run', async ({ file }) => {
+  ])('$ac a forged $file is not in the run folder when the contract tests run', async ({ file }) => {
     const { seenAtE2e } = await review(true, { forge: true });
     expect(seenAtE2e.get(file)).toBe(false);
   });
+
+  it.each([true, false])(
+    'AC-L8 contract outputs a unit test writes do not change the score (widget rendered: %s)',
+    async (rendered) => {
+      const clean = await review(rendered);
+      const forged = await review(rendered, { forge: true });
+      expect(forged.report.signals).toEqual(clean.report.signals);
+      expect(forged.report.contract).toEqual(clean.report.contract);
+    },
+  );
 
   it('AC-L9 never deletes results the command line points at outside the run folder', async () => {
     const saved = { axe: join(root, 'saved', 'axe', 'default.json'), results: join(root, 'saved', 'results.json') };
@@ -242,5 +282,20 @@ describe('AC-L1 runReview()', () => {
     writeFileSync(join(root, 'review', 'rubric.json'), '{}');
     const { report } = await review();
     expect(report.failedGates).toEqual(['G4']);
+  });
+
+  it.each([
+    { lockToo: false, how: 'a locked file' },
+    { lockToo: true, how: 'a locked file and the lock to match' },
+  ])('AC-L3 fails G4 when a unit test rewrites $how during the review', async ({ lockToo }) => {
+    const tamper = (): void => {
+      writeFileSync(join(root, 'review', 'reference', 'widget-reference.png'), 'not the reference');
+      if (lockToo) writeFileSync(join(root, 'review', 'contract.lock'), serialiseLock(computeLock(nodeFs(root))));
+    };
+    const { report } = await review(true, { tamper });
+    expect(report.failedGates).toEqual(['G4']);
+    expect(report.gates.find((g) => g.id === 'G4')?.detail).toContain(
+      'changed during the review: review/reference/widget-reference.png',
+    );
   });
 });
