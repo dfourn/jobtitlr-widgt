@@ -60,6 +60,11 @@ export interface LoopDeps {
   readonly generator: Generator;
   /** The text of spec 02. */
   readonly spec: string;
+  /**
+   * Checks the workspace before a review (AC-L12: `node review/src/guard.ts`, outside npm).
+   * Rejects when it refuses, which stops the loop before anything is reviewed or committed.
+   */
+  guard(): Promise<void>;
   /** Runs `npm run review` for an iteration and returns its report. */
   review(iteration: number): Promise<ReviewReport>;
   /** Copies runs/latest to runs/iter-NN. */

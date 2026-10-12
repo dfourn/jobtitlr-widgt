@@ -91,6 +91,7 @@ function nodeDeps(runner: CommandRunner, judge: Judge, kind: GeneratorKind, path
       console.log(text);
     }),
     spec: readFileSync(abs(WIDGT_ROOT, paths.spec), 'utf8'),
+    guard: () => Promise.resolve(),
     review: (iteration) =>
       runReview(
         { root: WIDGT_ROOT, fs, runner, judge, now: () => new Date(), log },

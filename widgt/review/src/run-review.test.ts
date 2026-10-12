@@ -284,6 +284,24 @@ describe('AC-L1 runReview()', () => {
     expect(report.failedGates).toEqual(['G4']);
   });
 
+  it('AC-L12 a .npmrc fails G4 and the review runs no command at all', async () => {
+    writeFileSync(join(root, '.npmrc'), 'node-options=--require ./src/hook.cjs\n');
+    const { report, calls } = await review();
+    expect(calls).toEqual([]);
+    expect(report.failedGates).toContain('G4');
+    expect(report.gates.find((g) => g.id === 'G4')?.detail).toContain('.npmrc');
+    expect(report.total).toBe(0);
+  });
+
+  it('AC-L12 G4 fails when a unit test adds a vitest.config.ts during the review', async () => {
+    const tamper = (): void => {
+      writeFileSync(join(root, 'vitest.config.ts'), 'export default {};\n');
+    };
+    const { report } = await review(true, { tamper });
+    expect(report.failedGates).toEqual(['G4']);
+    expect(report.gates.find((g) => g.id === 'G4')?.detail).toContain('vitest.config.ts');
+  });
+
   it.each([
     { lockToo: false, how: 'a locked file' },
     { lockToo: true, how: 'a locked file and the lock to match' },
