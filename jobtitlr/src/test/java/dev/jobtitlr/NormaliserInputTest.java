@@ -40,4 +40,15 @@ class NormaliserInputTest {
         assertEquals("Software engineer", new Normaliser().normalise("software ENGINEER"));
         assertEquals("iOS developer", new Normaliser(List.of("iOS developer")).normalise("IOS DEVELOPER"));
     }
+
+    @ParameterizedTest(name = "{0} normalises {1} to {2}")
+    @CsvSource({
+            "AC-3.1, Acountant, Accountant",
+            "AC-3.2, Software enginer, Software engineer",
+            "AC-3.3, Quantity surveyors, Quantity surveyor"
+    })
+    @DisplayName("AC-3.1 to AC-3.3 typos and plurals are tolerated")
+    void typosAndPluralsAreTolerated(String id, String input, String expected) {
+        assertEquals(expected, new Normaliser().normalise(input), "for \"" + input + "\"");
+    }
 }
