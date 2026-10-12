@@ -12,6 +12,13 @@ import java.util.Optional;
  */
 public final class Normaliser {
 
+    /** The brief's four default normalised titles. */
+    public static final List<String> DEFAULT_TITLES =
+            List.of("Architect", "Software engineer", "Quantity surveyor", "Accountant");
+
+    /** The default minimum quality a match must reach to be accepted. */
+    public static final double DEFAULT_MINIMUM_QUALITY = 0.2;
+
     private final List<String> titles;
     private final SimilarityScorer scorer;
     private final double minimumQuality;
@@ -29,9 +36,22 @@ public final class Normaliser {
         this.minimumQuality = minimumQuality;
     }
 
-    /** Creates a normaliser with the brief's default configuration. */
+    /**
+     * Creates a normaliser with the default titles, the default scorer and the
+     * default minimum quality.
+     */
     public Normaliser() {
-        this(List.of("Architect"), new TokenDiceScorer(), 0.2);
+        this(DEFAULT_TITLES, new TokenDiceScorer(), DEFAULT_MINIMUM_QUALITY);
+    }
+
+    /**
+     * Creates a normaliser with custom titles, the default scorer and the
+     * default minimum quality.
+     *
+     * @param titles the normalised titles to match against
+     */
+    public Normaliser(List<String> titles) {
+        this(titles, new TokenDiceScorer(), DEFAULT_MINIMUM_QUALITY);
     }
 
     /**
