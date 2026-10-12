@@ -24,9 +24,13 @@ public final class TokenDiceScorer implements SimilarityScorer {
     /**
      * Creates a scorer with a custom token threshold.
      *
-     * @param tokenThreshold the similarity at or above which two tokens match
+     * @param tokenThreshold the similarity at or above which two tokens match; must be within [0, 1]
+     * @throws IllegalArgumentException if tokenThreshold is outside [0, 1] or NaN
      */
     public TokenDiceScorer(double tokenThreshold) {
+        if (!(tokenThreshold >= 0.0 && tokenThreshold <= 1.0)) {
+            throw new IllegalArgumentException("tokenThreshold must be within [0, 1]: " + tokenThreshold);
+        }
         this.tokenThreshold = tokenThreshold;
     }
 
