@@ -2,6 +2,7 @@ package dev.jobtitlr;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Splits a job title into the tokens the matching algorithm works on.
@@ -23,9 +24,13 @@ final class Tokeniser {
      * @return the tokens in order, empty when the text holds no letters, digits, {@code #} or {@code +}
      */
     static List<String> tokenise(String text) {
-        return List.of(text.toLowerCase(Locale.ROOT)
+        Objects.requireNonNull(text, "text must not be null");
+        String cleaned = text.toLowerCase(Locale.ROOT)
                 .replaceAll("[^\\p{L}\\p{N}#+]", " ")
-                .strip()
-                .split("\\s+"));
+                .strip();
+        if (cleaned.isEmpty()) {
+            return List.of();
+        }
+        return List.of(cleaned.split("\\s+"));
     }
 }
