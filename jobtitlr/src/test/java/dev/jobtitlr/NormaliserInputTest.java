@@ -15,4 +15,10 @@ class NormaliserInputTest {
     void matchingIgnoresCase() {
         assertEquals("Software engineer", new Normaliser().normalise("JAVA ENGINEER"));
     }
+
+    @Test
+    @DisplayName("AC-2.2 whitespace is ignored")
+    void whitespaceIsIgnored() {
+        assertEquals("Software engineer", new Normaliser().normalise("  java   engineer "));
+    }
 }
