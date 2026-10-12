@@ -45,4 +45,16 @@ class MatchResultTest {
                 () -> new MatchResult("Accountant", quality));
         assertEquals("quality must be within [0, 1]: " + quality, exception.getMessage());
     }
+
+    @ParameterizedTest(name = "{0} accepts the quality {1}")
+    @CsvSource({
+            "AC-9.2, 0.0",
+            "AC-9.2, 1.0"
+    })
+    @DisplayName("AC-9.2 accepts 0.0 and 1.0")
+    void acceptsBoundaryQualities(String id, double quality) {
+        MatchResult result = new MatchResult("Accountant", quality);
+        assertEquals("Accountant", result.title());
+        assertEquals(quality, result.quality());
+    }
 }
