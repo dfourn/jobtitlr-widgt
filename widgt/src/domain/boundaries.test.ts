@@ -62,6 +62,14 @@ describe('src/domain boundaries', () => {
     expect(ruleIds).toContain('no-restricted-syntax');
   });
 
+  it.each<[string, string]>([
+    ['react', "export const load = () => import('react');\n"],
+    ['a computed module name', "const name = 'react';\nexport const load = () => import(name);\n"],
+  ])('AC-7.3 rejects a dynamic import of %s in src/domain', async (_module, code) => {
+    const ruleIds = await ruleIdsFor(code, 'src/domain/pretend.ts');
+    expect(ruleIds).toContain('no-restricted-syntax');
+  });
+
   it('AC-7.3 accepts plain TypeScript in src/domain', async () => {
     const ruleIds = await ruleIdsFor(
       'export const double = (value: number): number => value * 2;\n',
