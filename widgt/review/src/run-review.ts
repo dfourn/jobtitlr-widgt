@@ -1,6 +1,14 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { abs, defaultPaths, type ReviewPaths, SCREENSHOT_NAMES } from './config';
-import { checkContractLock, checkForbiddenPatterns, checkTestCount, runCommandGates } from './gates';
+import { abs, type ReviewPaths, SCREENSHOT_NAMES } from './config';
+import {
+  checkContractLock,
+  checkForbiddenPatterns,
+  checkTestCount,
+  computeLock,
+  lockChangesSince,
+  runCommandGates,
+  withChangesDuringReview,
+} from './gates';
 import type { ReadonlyFs } from './io/fs';
 import type { CommandRunner } from './io/runner';
 import type { Judge, JudgeResult } from './judge/judge';
@@ -49,29 +57,25 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   rmSync(abs(root, paths.latestDir), { recursive: true, force: true });
   mkdirSync(abs(root, paths.screenshotsDir), { recursive: true });
 
-  log('gates: typecheck, lint, build');
-  const commandGates = await runCommandGates(runner);
-  const lockGate = checkContractLock(fs, paths.lockFile);
+  // Hashed now and again at the end: G4 must also see changes made while the review runs.
+  const lockedAtStart = computeLock(fs);
+  const lockGateAtStart = checkContractLock(fs, paths.lockFile);
   const patternGate = checkForbiddenPatterns(fs);
 
-  log('unit and component tests (vitest)');
-  await runner.run('npx', ['--no-install', 'vitest', 'run', '--reporter=json', `--outputFile=${abs(root, paths.vitestResults)}`]);
+  log('gates: typecheck, lint, build');
+  const commandGates = await runCommandGates(runner);
 
-  // Vitest runs generator-owned tests in Node, which can write files: clear what Playwright writes and the score reads.
-  clearContractOutputs(root, paths.latestDir);
-
+  // Vitest runs generator-owned tests in Node, which can write files. So the contract tests run,
+  // and everything that reads their outputs (signals, judge) finishes, before any unit test runs.
   log('contract tests (npm run test:e2e)');
   const e2e = await runner.run('npm', ['run', 'test:e2e'], { env: { REVIEW_RUN_DIR: abs(root, paths.latestDir) } });
   if (/missing script/i.test(`${e2e.stdout}\n${e2e.stderr}`)) {
     notes.push('npm run test:e2e is not defined yet, so no contract tests ran');
   }
 
-  log('collecting signals');
+  log('collecting contract signals');
   const contractResults = readJson(fs, paths.contractResults, (json) => parsePlaywrightReport(json, root));
   const contract = contractSignal(contractResults, paths.contractResults);
-  const unitResults = readJson(fs, paths.vitestResults, (json) => parseVitestReport(json, root));
-  const unitRate = unitPassRate(unitResults);
-  const coverage = acCoverage(fs, paths.spec, unitResults);
   // AC-L8: a11y, responsive and visual score 0 unless the widget rendered.
   const presence = widgetPresence(contractResults);
   const a11y = requirePresence(presence, axeSignal(readAxeStates(fs, paths.axeDir), paths.axeDir));
@@ -93,6 +97,13 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
     writeFileSync(abs(root, `${paths.latestDir}/judge.json`), `${JSON.stringify(judged, null, 2)}\n`);
     notes.push(...judged.errors.map((error) => `judge ${deps.judge.name}: ${error}`));
   }
+
+  log('unit and component tests (vitest)');
+  await runner.run('npx', ['--no-install', 'vitest', 'run', '--reporter=json', `--outputFile=${abs(root, paths.vitestResults)}`]);
+  const unitResults = readJson(fs, paths.vitestResults, (json) => parseVitestReport(json, root));
+  const unitRate = unitPassRate(unitResults);
+  const coverage = acCoverage(fs, paths.spec, unitResults);
+  const lockGate = withChangesDuringReview(lockGateAtStart, lockChangesSince(fs, lockedAtStart));
 
   const unitValue =
     unitRate.value === null && coverage.value === null ? null : ((unitRate.value ?? 0) + (coverage.value ?? 0)) / 2;
@@ -150,22 +161,6 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   writeFileSync(abs(root, `${paths.latestDir}/report.json`), `${JSON.stringify(report, null, 2)}\n`);
   writeFileSync(abs(root, `${paths.latestDir}/report.md`), renderReportMarkdown(report));
   return report;
-}
-
-/**
- * Removes what the contract tests write and the score reads (spec 03 §4), after Vitest and before
- * Playwright, so a file left by a unit test cannot pass for a contract output: the axe results, the
- * screenshots and Playwright's JSON report (deleted too, in case Playwright fails to start). Only
- * inside the run folder, where Playwright writes (`REVIEW_RUN_DIR`); a path given on the command
- * line is only read, never deleted.
- */
-function clearContractOutputs(root: string, latestDir: string): void {
-  const written = defaultPaths(latestDir);
-  for (const dir of [written.axeDir, written.screenshotsDir]) {
-    rmSync(abs(root, dir), { recursive: true, force: true });
-    mkdirSync(abs(root, dir), { recursive: true });
-  }
-  rmSync(abs(root, written.contractResults), { force: true });
 }
 
 async function runJudge(deps: ReviewDeps, paths: ReviewPaths): Promise<JudgeResult | null> {

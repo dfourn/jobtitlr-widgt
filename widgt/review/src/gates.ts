@@ -135,6 +135,23 @@ function diffLocks(expected: ContractLock, actual: ContractLock): LockDiff {
   };
 }
 
+/**
+ * Files in the lock scope that changed, appeared or disappeared since `before`, a lock computed
+ * at the start of the same review (AC-L3). The comparison is in memory, not with
+ * `review/contract.lock`, because a unit test could rewrite the lock along with the files.
+ */
+export function lockChangesSince(fs: ReadonlyFs, before: ContractLock, scope: LockScope = DEFAULT_LOCK_SCOPE): string[] {
+  const diff = diffLocks(before, computeLock(fs, scope));
+  return [...diff.changed, ...diff.added, ...diff.removed].sort();
+}
+
+/** G4 with the files that changed during the review: the gate fails when there are any. */
+export function withChangesDuringReview(gate: GateResult, changed: readonly string[]): GateResult {
+  if (changed.length === 0) return gate;
+  const note = `locked files changed during the review: ${changed.join(', ')}`;
+  return { ...gate, passed: false, detail: gate.passed ? note : `${gate.detail}; ${note}` };
+}
+
 /** A forbidden pattern for G5. */
 export interface ForbiddenPattern {
   readonly label: string;
