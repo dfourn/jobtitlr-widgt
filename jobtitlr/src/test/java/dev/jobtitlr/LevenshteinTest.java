@@ -20,4 +20,16 @@ class LevenshteinTest {
         assertEquals(distance, Levenshtein.distance(a, b));
         assertEquals(similarity, Levenshtein.similarity(a, b), 1e-9);
     }
+
+    @ParameterizedTest(name = "{0} similarity({1}, {2}) = {3}")
+    @CsvSource({
+            "AC-3.5, acountant, accountant, 0.9",
+            "AC-3.5, enginer, engineer, 0.875",
+            "AC-3.5, surveyors, surveyor, 0.8888888888888888",
+            "AC-3.5, c#, c+, 0.5"
+    })
+    @DisplayName("AC-3.5 acountant vs accountant is 0.9, enginer vs engineer 0.875, surveyors vs surveyor 8/9, c# vs c+ 0.5")
+    void workedValues(String id, String a, String b, double similarity) {
+        assertEquals(similarity, Levenshtein.similarity(a, b), 1e-9);
+    }
 }
