@@ -24,7 +24,7 @@ final class Tokeniser {
      */
     static List<String> tokenise(String text) {
         return List.of(text.toLowerCase(Locale.ROOT)
-                .replaceAll("[^\\p{L}\\p{N}]", " ")
+                .replaceAll("[^\\p{L}\\p{N}#+]", " ")
                 .strip()
                 .split("\\s+"));
     }

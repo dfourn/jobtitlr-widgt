@@ -36,8 +36,8 @@ class TokeniserTest {
 
     @ParameterizedTest(name = "{0} {1} -> [{2}]")
     @CsvSource({
-            "AC-2.4, 'C# Engineer', 'c#, engineer'",
-            "AC-2.4, 'C++ developer', 'c++, developer'"
+            "AC-2.4, C# Engineer, c# engineer",
+            "AC-2.4, C++ developer, c++ developer"
     })
     @DisplayName("AC-2.4 keeps # and + inside tokens: \"C# Engineer\", \"C++ developer\"")
     void keepsHashAndPlus(String id, String text, String expected) {
