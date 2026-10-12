@@ -135,6 +135,6 @@ Errors: the widget validates its counts and throws during render (fail fast, AC-
 | `/` | Interactive mode: `onRatingSelect` is wired to page state. Below the widget, an element with `role="status"` and `data-testid="selection"` shows `Selected: none` or `Selected: N stars` (singular for 1). |
 | `/?interactive=0` | Static mode: no `onRatingSelect`. |
 | `/?empty=1` | All counts are 0, in interactive mode. |
-| `/?visual=1` | Static mode. Only the widget, on a white page with no margin, in a wrapper exactly **360px** wide (the reference card's width). The widget's accessibility tree matches `/?interactive=0`, and it shows no images other than the feefo logo. Used for screenshot comparison with the card in the 401x443 reference. |
+| `/?visual=1` | Static mode. Only the widget, on a white page with no margin, in a wrapper exactly **360px** wide (the reference card's width). The widget's accessibility tree matches `/?interactive=0`. The whole page shows no images other than the feefo logo (its only `<img>`): no CSS images except SVG masks and clips, and no embedded or SVG images. The widget and its ancestors are fully opaque and visible. Used for screenshot comparison with the card in the 401x443 reference. |
 
 The widget is the only element with `data-testid="product-rating"`. The page has one `<main>` landmark, and its `<h1>` reads "widgt demo" (visually hidden in `?visual=1`).
