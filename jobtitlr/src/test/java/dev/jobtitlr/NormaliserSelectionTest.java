@@ -43,4 +43,11 @@ class NormaliserSelectionTest {
         assertEquals("A", normaliser.normalise("anything"));
         assertEquals(Optional.of(new MatchResult("A", 0.5)), normaliser.bestMatch("anything"));
     }
+
+    @Test
+    @DisplayName("AC-4.5 bestMatch exposes q through MatchResult.quality()")
+    void bestMatchExposesQuality() {
+        Normaliser normaliser = new Normaliser(List.of("A", "B"), (input, candidate) -> 0.42, 0.2);
+        assertEquals(0.42, normaliser.bestMatch("anything").orElseThrow().quality());
+    }
 }
