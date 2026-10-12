@@ -93,4 +93,19 @@ class NormaliserSelectionTest {
     void normaliseReturnsTheStrippedInputWhenNothingMatches() {
         assertEquals("Chef", new Normaliser().normalise("  Chef  "));
     }
+
+    @Test
+    @DisplayName("AC-6.1 a best q equal to minimumQuality is a match")
+    void bestEqualToMinimumQualityIsAMatch() {
+        Normaliser normaliser = new Normaliser(List.of("Architect", "Accountant"),
+                (input, candidate) -> 0.2, 0.2);
+        assertEquals(Optional.of(new MatchResult("Architect", 0.2)), normaliser.bestMatch("Anything"));
+    }
+
+    @Test
+    @DisplayName("AC-6.1 q of 0.0 is never a match, even with minimumQuality 0.0")
+    void zeroQualityIsNeverAMatch() {
+        Normaliser normaliser = new Normaliser(List.of("Architect"), (input, candidate) -> 0.0, 0.0);
+        assertTrue(normaliser.bestMatch("Anything").isEmpty());
+    }
 }
