@@ -35,4 +35,12 @@ class NormaliserSelectionTest {
         assertEquals("B", normaliser.normalise("anything"));
         assertEquals(Optional.of(new MatchResult("B", 0.9)), normaliser.bestMatch("anything"));
     }
+
+    @Test
+    @DisplayName("AC-5.2 on equal q the title listed first wins")
+    void equalQualityPicksTheFirstListedTitle() {
+        Normaliser normaliser = new Normaliser(List.of("A", "B", "C"), (input, candidate) -> 0.5, 0.2);
+        assertEquals("A", normaliser.normalise("anything"));
+        assertEquals(Optional.of(new MatchResult("A", 0.5)), normaliser.bestMatch("anything"));
+    }
 }
