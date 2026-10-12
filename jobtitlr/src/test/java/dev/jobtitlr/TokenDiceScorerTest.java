@@ -45,4 +45,14 @@ class TokenDiceScorerTest {
     void quantitySurveyorsScoresSeventeenEighteenths() {
         assertEquals(0.9444444444444444, scorer.score("Quantity surveyors", "Quantity surveyor"), 1e-9);
     }
+
+    @ParameterizedTest(name = "{0} score of {1} and {2} is {3}")
+    @CsvSource({
+            "AC-3.4, abcde, abcdx, 0.8",
+            "AC-3.4, c#, c+, 0.0"
+    })
+    @DisplayName("AC-3.4 a token at exactly the threshold matches: \"abcde\" vs \"abcdx\" scores 0.8; \"c#\" vs \"c+\" scores 0.0")
+    void thresholdEdges(String id, String input, String candidate, double expected) {
+        assertEquals(expected, scorer.score(input, candidate), 1e-9);
+    }
 }
