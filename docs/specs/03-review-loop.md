@@ -38,7 +38,7 @@ Judge (optional): `claude`, `glm` or `none`. When it is `none`, its weight is sp
 - **G1** `tsc --noEmit` passes.
 - **G2** ESLint passes with 0 warnings.
 - **G3** `vite build` succeeds.
-- **G4** The lock holds: the sha256 of every file in the lock scope matches `review/contract.lock`. The scope is `DEFAULT_LOCK_SCOPE` in `review/src/gates.ts`: `review/contract/**`, `review/reference/**`, `review/rubric.json`, `review/playwright.config.ts` (its `grep` or `testIgnore` could skip contract tests), `review/src/**` (the harness itself), the ESLint, TypeScript and Vite configs (`eslint.config.js`, `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`, `review/tsconfig.json`, `vite.config.ts`), `package.json` and `package-lock.json`. Only a human rewrites the lock, with `npm run review:lock`. Admitted limit: the lock checks itself, because `checkContractLock` lives in `review/src`, so an edited copy could pass anything. G4 catches careless edits; deliberate ones are caught by the separation check after each generator run (`git status` on `review/` and the configs) and by the generator's deny list.
+- **G4** The lock holds: the sha256 of every file in the lock scope matches `review/contract.lock`. The scope is `DEFAULT_LOCK_SCOPE` in `review/src/gates.ts`: `review/contract/**`, `review/reference/**`, `review/rubric.json`, `review/playwright.config.ts` (its `grep` or `testIgnore` could skip contract tests), `review/src/**` (the harness itself), the ESLint, TypeScript and Vite configs (`eslint.config.js`, `tsconfig.json`, `tsconfig.app.json`, `tsconfig.node.json`, `review/tsconfig.json`, `vite.config.ts`), `package.json` and `package-lock.json`. Inside the locked folders every file is hashed except `.DS_Store` and `Thumbs.db`, which operating systems create on their own; the root `.gitattributes` keeps text files LF on checkout, so `core.autocrlf` cannot change a hash. Only a human rewrites the lock, with `npm run review:lock`. Admitted limit: the lock checks itself, because `checkContractLock` lives in `review/src`, so an edited copy could pass anything. G4 catches careless edits; deliberate ones are caught by the separation check after each generator run (`git status` on `review/` and the configs) and by the generator's deny list.
 - **G5** There is no `.skip(`, `.only(`, `xit(`, `xdescribe(`, `@ts-ignore`, `@ts-expect-error`, `@ts-nocheck` or `eslint-disable` in a source file under `src/` or `review/contract/`. `review/src/` is not scanned: it defines and tests these patterns, so it would always match itself, and G4 locks it.
 - **G6** The unit and component test count has not gone down since the last iteration, so tests cannot be deleted to make the suite pass.
 
@@ -46,16 +46,16 @@ Judge (optional): `claude`, `glm` or `none`. When it is `none`, its weight is sp
 | Signal | Weight | Source | Brief |
 |---|---|---|---|
 | Contract tests passing (Playwright behaviour and AC checks) | 25 | `review/contract/*.spec.ts` | B2.1, B2.9 |
-| Unit and component tests in `src/`: the mean of their pass rate and AC coverage. Coverage is the share of spec 02's unit-testable IDs (AC-1.x, AC-2.x, AC-3.1-3.5, AC-4.1-4.6: 20 today) cited by at least one **passing** test, where a test cites the AC IDs its title starts with (AC-L11) | 15 | Vitest JSON reporter (titles and results; no source scan) | B2.9 |
+| Unit and component tests in `src/`: the mean of their pass rate and AC coverage. Coverage is the share of spec 02's unit-testable IDs (AC-1.x, AC-2.x, AC-3.1-3.5, AC-4.1-4.6: 20 today) cited by at least one **passing** test, where a test cites the one AC ID its own title starts with, and the one each enclosing describe title starts with; a title listing more IDs cites only the first (AC-L11) | 15 | Vitest JSON reporter (titles and results; no source scan) | B2.9 |
 | Accessibility: axe at WCAG 2.2 AA in the default, static and selected states. Each state scores `100 - 25·critical - 15·serious - 5·moderate - 1·minor` (violated rules counted by impact, floored at 0); the signal is the mean of the three. A state without a readable `axe/<state>.json` scores 0 and is named (AC-L9). There is no fallback to the AC-3.6 pass rate | 20 | @axe-core/playwright, via `axe/<state>.json` from the AC-3.6 contract tests | B2.7, B2.8 |
 | Responsiveness at 320, 768 and 1280: no horizontal overflow, no clipped text, all 5 rows visible. The pass rate of the contract tests whose title starts with AC-5 | 15 | Playwright DOM checks | B2.3 |
-| Visual similarity: the widget's own screenshot (`visual-widget.png`, in the 360px `?visual=1` wrapper) vs the reference cropped to the card (360x405 at x 20, y 16), on foreground pixels only | 10 | pixelmatch (threshold 0.1, anti-aliasing forgiven) over the pixels that are ink in either image (mean of R, G, B below 245): foreground similarity `1 - different/foreground`, mapped linearly from 0.10 to 0.90 onto 0 to 100. Diagnostics, not scored: the card's `diff.png`, and for five regions (label, stars, score, brand, rows) the similarity and the best offset within ±8px | B2.2 |
+| Visual similarity: the widget's own screenshot (`visual-widget.png`, in the 360px `?visual=1` wrapper) vs the reference cropped to the card (360x405 at x 20, y 16), on foreground pixels only. Scored only when the AC-6.3 widget-capture contract test, which runs the anti-cheat checks before writing the screenshot, passed in the same run (AC-L10) | 10 | pixelmatch (threshold 0.1, anti-aliasing forgiven) over the pixels that are ink in either image (mean of R, G, B below 245): foreground similarity `1 - different/foreground`, mapped linearly from 0.10 to 0.90 onto 0 to 100. Diagnostics, not scored: the card's `diff.png`, and for five regions (label, stars, score, brand, rows) the similarity and the best offset within ±8px | B2.2 |
 | AI judge rubric (component boundaries, readability, fidelity), the median of 3 samples | 15 | `review/rubric.json` | B2.4, B2.6 |
 
 - When the judge is off, its weight is spread over the other signals in proportion. Any other missing signal scores 0 and is named; its weight is not redistributed, otherwise breaking a check would pay.
 
-### Precondition: the widget renders (AC-L8)
-The accessibility, responsiveness and visual signals score 0, naming the reason, unless at least one AC-1.1 and one AC-1.2 contract test ran and every contract test citing either passed. Without it a page with no widget earns points: axe finds nothing to flag, nothing overflows, and a near-white screenshot resembles a white reference. It is a precondition, not a gate, because a gate would zero the total and hide progress in the contract and unit signals. The visual region diagnostics are dropped too.
+### Precondition: the widget's reference content renders (AC-L8)
+The accessibility, responsiveness and visual signals score 0, naming the reason, unless at least one AC-1.1 and one AC-1.2 contract test ran and every contract test citing either passed. Those tests check that the reference content is on the page (the label, the score text, the heading, the logo and five rows with the reference counts), not how it got there: hardcoded markup showing the same content meets the precondition too (§8). Without it a page with no widget earns points: axe finds nothing to flag, nothing overflows, and a near-white screenshot resembles a white reference. It is a precondition, not a gate, because a gate would zero the total and hide progress in the contract and unit signals. The visual region diagnostics are dropped too.
 
 ### Stopping
 - **Done**: score >= 90 **and** all gates pass.
@@ -75,6 +75,7 @@ The accessibility, responsiveness and visual signals score 0, naming the reason,
   - `screenshots/visual-widget.png`: the widget alone in `?visual=1`, the image the visual signal scores; `screenshots/visual-401.png`: the 401x443 frame, for people
   - `diff.png`, the card diff
   - `judge.json`, the judge's scores and prose, when the judge runs
+- After Vitest and before Playwright, `npm run review` removes and recreates `axe/` and `screenshots/` in the run folder and deletes `contract-results.json`, so a file written by a unit test (which runs in Node) cannot pass for a contract output, even when Playwright fails to start. Paths given on the command line (`--axe`, `--contract-results`) are read, never deleted.
 - The contract tests write into `REVIEW_RUN_DIR` when it is set (the harness passes the absolute path of `runs/latest/`), otherwise into `review/runs/latest/`.
 - `review/runs/scoreboard.md`: one row per iteration, showing each signal, the total, the commit SHA and a short summary of the change.
 - `review/runs/index.html`: a static page with a score chart and screenshots side by side for each iteration. This is the demo page for the interview.
@@ -87,7 +88,7 @@ The prompt for iteration n+1 contains:
 - the last total
 - the top 10 failures from the report, each with its AC ID, file and message
 - the failed gates, if any, each with at most five lines of the command's output
-- one visual-diagnostics line: the weakest of the five regions, its similarity, and the offset within ±8px at which it matches the reference best. It says where the widget differs, not how to fix it, and is left out when the widget did not render (there are no diagnostics then)
+- one visual-diagnostics line: the weakest of the five regions, its similarity, and the offset within ±8px at which it matches the reference best. It says where the widget differs, not how to fix it, and is left out when the widget did not render or its AC-6.3 capture failed (there are no diagnostics then)
 
 It never contains whole logs, and **never the judge's prose**, so the generator can't learn to please the judge instead of meeting the spec.
 
@@ -105,10 +106,10 @@ It never contains whole logs, and **never the judge's prose**, so the generator 
 - **AC-L5** The loop stops on each stop condition (tested with a fake generator and a fake review).
 - **AC-L6** Each iteration produces a commit, and a row in the scoreboard.
 - **AC-L7** Generator adapters can be swapped through `--generator`. The `external` adapter is enough for a full run.
-- **AC-L8** The a11y, responsive and visual signals score 0, with a reason, unless every AC-1.1 and AC-1.2 contract test passed (the widget-presence precondition).
+- **AC-L8** The a11y, responsive and visual signals score 0, with a reason, unless every AC-1.1 and AC-1.2 contract test passed (the precondition that the widget's reference content rendered).
 - **AC-L9** The a11y signal is the mean of per-state axe scores over the expected states (default, static, selected). A missing or unreadable state scores 0 and is named.
-- **AC-L10** The visual signal compares the widget's screenshot with the reference card on foreground pixels only.
-- **AC-L11** Unit AC coverage counts only AC IDs cited by passing unit tests, over the unit-testable IDs of spec 02 (AC-1.x, AC-2.x, AC-3.1-3.5, AC-4.1-4.6).
+- **AC-L10** The visual signal compares the widget's screenshot with the reference card on foreground pixels only, and scores 0, with a reason, unless the AC-6.3 widget-capture contract test passed in the same run.
+- **AC-L11** Unit AC coverage counts only AC IDs cited by passing unit tests, over the unit-testable IDs of spec 02 (AC-1.x, AC-2.x, AC-3.1-3.5, AC-4.1-4.6). A test or describe title cites only the first AC ID it starts with.
 
 ## 8. Known limitations (to discuss)
 - The reference is a 401x443 screenshot taken from a PDF, so pixel similarity is approximate. That is one reason its weight is low.
@@ -116,3 +117,6 @@ It never contains whole logs, and **never the judge's prose**, so the generator 
 - Thresholds were tuned by hand.
 - Visual calibration (AC-L10): 0.10 -> 0 and 0.90 -> 100 on foreground similarity. Measured on throwaway pages in the Phase 0 planning pass: an empty bordered card and unstyled HTML 0.063, a hand-tuned copy 0.864, Arial instead of Poppins 0.617, the layout 4px lower 0.522. Measured on the reference itself: an all-white widget 0.114 (1.8 points, because the anti-aliased edges of the reference's text are forgiven even where the widget has no text), and the card moved 4px down 0.560. The ceiling comes from **one** hand-tuned copy, so it is to be revisited after Phase 3 iteration 1.
 - Unless fonts and rendering are pinned, screenshots can differ between operating systems. Reviews run in the same Chromium build, and baselines are not committed per OS.
+- The precondition (AC-L8) checks that the widget's reference content rendered, not that it was computed: every contract scenario uses the reference counts, so hardcoded markup showing them meets it. The unit tests of the widget and the judge are what check that the content comes from the data.
+- AC-6.3 stops a picture of the reference reaching the screenshot: it checks the whole `?visual=1` page for images, picture elements, CSS image URLs (only SVG-shape masks and clips, and gradient fills, are allowed) and see-through ancestors. It does not stop the reference being redrawn from its pixel values with markup or gradients, one small box at a time; the code would show it, and the judge and a person reviewing it would see it.
+- Contract outputs are cleared after Vitest, but a process a unit test starts and detaches could still write into the run folder later, while Playwright runs or after it finishes. Tying the widget screenshot to a passing AC-6.3 test narrows this for the visual signal, not for the axe files. The generator's deny list and the separation check are the other guards.
