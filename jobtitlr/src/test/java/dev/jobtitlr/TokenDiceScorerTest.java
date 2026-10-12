@@ -55,4 +55,10 @@ class TokenDiceScorerTest {
     void thresholdEdges(String id, String input, String candidate, double expected) {
         assertEquals(expected, scorer.score(input, candidate), 1e-9);
     }
+
+    @Test
+    @DisplayName("AC-4.6 each token is paired at most once: \"engineer engineer\" vs \"engineer\" scores 2/3")
+    void eachTokenIsPairedAtMostOnce() {
+        assertEquals(2.0 / 3.0, scorer.score("engineer engineer", "engineer"), 1e-9);
+    }
 }
