@@ -1,5 +1,7 @@
 package dev.jobtitlr;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -19,9 +21,9 @@ public final class TokenDiceScorer implements SimilarityScorer {
     }
 
     /**
-     * Scores the similarity between an input and a candidate title: each
-     * input token contributes the similarity of its best matching candidate
-     * token, and q is twice that sum over the total token count.
+     * Scores the similarity between an input and a candidate title. Tokens
+     * are paired one-to-one, best pairs first, and q is twice the sum of the
+     * paired similarities over the total token count.
      *
      * @param input the free-text job title; must not be null
      * @param candidate the configured normalised title; must not be null
@@ -31,16 +33,41 @@ public final class TokenDiceScorer implements SimilarityScorer {
     public double score(String input, String candidate) {
         List<String> inputTokens = Tokeniser.tokenise(input);
         List<String> candidateTokens = Tokeniser.tokenise(candidate);
+        List<TokenPair> pairs = matchingPairs(inputTokens, candidateTokens);
+        boolean[] usedInput = new boolean[inputTokens.size()];
+        boolean[] usedCandidate = new boolean[candidateTokens.size()];
         double sum = 0.0;
-        for (String inputToken : inputTokens) {
-            double best = 0.0;
-            for (String candidateToken : candidateTokens) {
-                best = Math.max(best, Levenshtein.similarity(inputToken, candidateToken));
-            }
-            if (best >= tokenThreshold) {
-                sum += best;
+        for (TokenPair pair : pairs) {
+            if (!usedInput[pair.inputIndex()] && !usedCandidate[pair.candidateIndex()]) {
+                usedInput[pair.inputIndex()] = true;
+                usedCandidate[pair.candidateIndex()] = true;
+                sum += pair.similarity();
             }
         }
         return 2.0 * sum / (inputTokens.size() + candidateTokens.size());
+    }
+
+    /**
+     * Builds every pair whose similarity reaches the token threshold, in
+     * (input index, candidate index) order, stably sorted by similarity
+     * descending. The stable order makes the two argument orders add the
+     * same doubles in the same sequence.
+     */
+    private List<TokenPair> matchingPairs(List<String> inputTokens, List<String> candidateTokens) {
+        List<TokenPair> pairs = new ArrayList<>();
+        for (int i = 0; i < inputTokens.size(); i++) {
+            for (int j = 0; j < candidateTokens.size(); j++) {
+                double similarity = Levenshtein.similarity(inputTokens.get(i), candidateTokens.get(j));
+                if (similarity >= tokenThreshold) {
+                    pairs.add(new TokenPair(i, j, similarity));
+                }
+            }
+        }
+        pairs.sort(Comparator.comparingDouble(TokenPair::similarity).reversed());
+        return pairs;
+    }
+
+    /** A candidate pairing of one input token with one candidate token. */
+    private record TokenPair(int inputIndex, int candidateIndex, double similarity) {
     }
 }
