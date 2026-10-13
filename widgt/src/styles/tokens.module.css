@@ -1,0 +1,15 @@
+/*
+ * Design tokens for the widget (ADR 0001, AC-6.2), measured from the reference
+ * card. Applied to the widget root via `composes`, so a host can override any
+ * of them on the root element to re-theme the widget.
+ */
+.tokens {
+  --widgt-color-accent: #ffcb31; /* stars, bar fill */
+  --widgt-color-track: #e2e2e2; /* bar track, small breakdown stars */
+  --widgt-color-star-empty: #d4d4d4; /* empty part of a star tile */
+  --widgt-color-border: #d4d4d4; /* card border */
+  --widgt-color-text: #25292f; /* label */
+  --widgt-color-muted: #646c76; /* score, heading, digits, counts: 5.3:1 on white */
+  --widgt-color-surface: #fff;
+  --widgt-color-focus: #25292f; /* dark, not the yellow: yellow on white is 1.6:1 */
+}

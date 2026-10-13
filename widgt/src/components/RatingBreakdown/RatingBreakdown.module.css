@@ -1,0 +1,15 @@
+.list {
+  align-self: stretch; /* the rows span the card even though siblings centre */
+  margin: 2.5rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.25rem;
+}
+
+/* Tighten only spacing at narrow containers (AC-5.3); nothing is hidden here. */
+@container (max-width: 20rem) {
+  .list {
+    margin-top: 1.5rem;
+  }
+}

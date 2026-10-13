@@ -1,0 +1,162 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-13T16:36:50.378Z",
+  "iteration": 1,
+  "judge": "none",
+  "total": 95.8,
+  "uncappedTotal": 95.8,
+  "gatesPassed": true,
+  "failedGates": [],
+  "gates": [
+    {
+      "id": "G1",
+      "name": "TypeScript",
+      "passed": true,
+      "detail": "npm run typecheck passed",
+      "excerpt": []
+    },
+    {
+      "id": "G2",
+      "name": "ESLint",
+      "passed": true,
+      "detail": "npm run lint passed",
+      "excerpt": []
+    },
+    {
+      "id": "G3",
+      "name": "Build",
+      "passed": true,
+      "detail": "npm run build passed",
+      "excerpt": []
+    },
+    {
+      "id": "G4",
+      "name": "Contract lock",
+      "passed": true,
+      "detail": "71 locked files unchanged",
+      "excerpt": []
+    },
+    {
+      "id": "G5",
+      "name": "Forbidden patterns",
+      "passed": true,
+      "detail": "none in src, review/contract",
+      "excerpt": []
+    },
+    {
+      "id": "G6",
+      "name": "Test count",
+      "passed": true,
+      "detail": "172 tests (was 121)",
+      "excerpt": []
+    }
+  ],
+  "signals": {
+    "contract": {
+      "value": 100,
+      "weight": 25,
+      "effectiveWeight": 29.41176470588235,
+      "contribution": 29.41176470588235,
+      "status": "ok",
+      "detail": "58/58 contract tests passed"
+    },
+    "unit": {
+      "value": 100,
+      "weight": 15,
+      "effectiveWeight": 17.647058823529413,
+      "contribution": 17.647058823529413,
+      "status": "ok",
+      "detail": "172/172 unit tests passed; AC coverage 100% (20/20)"
+    },
+    "a11y": {
+      "value": 100,
+      "weight": 20,
+      "effectiveWeight": 23.529411764705884,
+      "contribution": 23.529411764705884,
+      "status": "ok",
+      "detail": "axe, mean of default, static, selected: default 100; static 100; selected 100"
+    },
+    "responsive": {
+      "value": 100,
+      "weight": 15,
+      "effectiveWeight": 17.647058823529413,
+      "contribution": 17.647058823529413,
+      "status": "ok",
+      "detail": "16/16 AC-5 contract tests passed"
+    },
+    "visual": {
+      "value": 64.2,
+      "weight": 10,
+      "effectiveWeight": 11.764705882352942,
+      "contribution": 7.552941176470589,
+      "status": "ok",
+      "detail": "foreground similarity 61.4% (13193 of 34169 foreground pixels differ)"
+    },
+    "judge": {
+      "value": null,
+      "weight": 15,
+      "effectiveWeight": 0,
+      "contribution": 0,
+      "status": "off",
+      "detail": "judge off; its weight is spread over the other signals"
+    }
+  },
+  "missing": [],
+  "testCount": 172,
+  "contract": {
+    "passed": 58,
+    "total": 58
+  },
+  "judgeScores": null,
+  "visualRegions": [
+    {
+      "name": "label",
+      "similarity": 0.6361867704280155,
+      "best": {
+        "dx": 0,
+        "dy": -5,
+        "similarity": 1
+      }
+    },
+    {
+      "name": "stars",
+      "similarity": 0.8749466495945369,
+      "best": {
+        "dx": 1,
+        "dy": -1,
+        "similarity": 0.9562853655830467
+      }
+    },
+    {
+      "name": "score",
+      "similarity": 0.5838068181818181,
+      "best": {
+        "dx": 0,
+        "dy": -3,
+        "similarity": 0.7451669595782073
+      }
+    },
+    {
+      "name": "brand",
+      "similarity": 0.5692019950124688,
+      "best": {
+        "dx": 8,
+        "dy": 2,
+        "similarity": 0.7441197434069851
+      }
+    },
+    {
+      "name": "rows",
+      "similarity": 0.5215798045602607,
+      "best": {
+        "dx": 5,
+        "dy": -3,
+        "similarity": 0.9109543751377562
+      }
+    }
+  ],
+  "failures": [],
+  "notes": [
+    "screenshot 361x408 cropped to the reference size 360x405"
+  ]
+}

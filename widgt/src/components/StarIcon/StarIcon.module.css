@@ -1,0 +1,4 @@
+/* Inline svg leaves a baseline gap unless it is block-level. */
+.icon {
+  display: block;
+}
