@@ -2,6 +2,7 @@ package dev.jobtitlr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -86,6 +87,29 @@ class NormaliserConfigurationTest {
     void acceptsBoundaryMinimumQuality(String id, double minimumQuality) {
         Normaliser normaliser = new Normaliser(List.of("Architect"), new TokenDiceScorer(), minimumQuality);
         assertEquals("Architect", normaliser.normalise("Architect"));
+    }
+
+    @Test
+    @DisplayName("AC-8.5 the documented default minimumQuality is 0.2 (spec 01, open question O-2)")
+    void defaultMinimumQualityIsTheDocumentedDefault() {
+        assertEquals(0.2, Normaliser.DEFAULT_MINIMUM_QUALITY,
+                "changing the default must be a conscious decision, not silent drift");
+    }
+
+    @Test
+    @DisplayName("AC-8.5 the no-arg Normaliser rejects a weak but non-zero best q (0 < q < 0.2)")
+    void defaultMinimumQualityRejectsAWeakButNonZeroMatch() {
+        String jobTitle = "Deputy head of the senior engineers team";
+        assertTrue(new Normaliser().bestMatch(jobTitle).isEmpty(),
+                "the default minimum quality must reject the best q for \"" + jobTitle + "\"");
+        // The same input matches once the threshold drops to zero, so its best q is
+        // strictly between 0 and the default: only the default stands in the way.
+        MatchResult weak = new Normaliser(Normaliser.DEFAULT_TITLES, new TokenDiceScorer(), 0.0)
+                .bestMatch(jobTitle)
+                .orElseThrow();
+        assertEquals("Software engineer", weak.title());
+        assertTrue(weak.quality() > 0.0 && weak.quality() < 0.2,
+                "best q should sit strictly between 0 and the default but was " + weak.quality());
     }
 
     @Test
