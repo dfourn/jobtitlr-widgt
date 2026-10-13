@@ -1,0 +1,521 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-13T15:53:45.066Z",
+  "iteration": 0,
+  "judge": "none",
+  "total": 12.4,
+  "uncappedTotal": 12.4,
+  "gatesPassed": true,
+  "failedGates": [],
+  "gates": [
+    {
+      "id": "G1",
+      "name": "TypeScript",
+      "passed": true,
+      "detail": "npm run typecheck passed",
+      "excerpt": []
+    },
+    {
+      "id": "G2",
+      "name": "ESLint",
+      "passed": true,
+      "detail": "npm run lint passed",
+      "excerpt": []
+    },
+    {
+      "id": "G3",
+      "name": "Build",
+      "passed": true,
+      "detail": "npm run build passed",
+      "excerpt": []
+    },
+    {
+      "id": "G4",
+      "name": "Contract lock",
+      "passed": true,
+      "detail": "71 locked files unchanged",
+      "excerpt": []
+    },
+    {
+      "id": "G5",
+      "name": "Forbidden patterns",
+      "passed": true,
+      "detail": "none in src, review/contract",
+      "excerpt": []
+    },
+    {
+      "id": "G6",
+      "name": "Test count",
+      "passed": true,
+      "detail": "121 tests (no previous run)",
+      "excerpt": []
+    }
+  ],
+  "signals": {
+    "contract": {
+      "value": 0,
+      "weight": 25,
+      "effectiveWeight": 29.41176470588235,
+      "contribution": 0,
+      "status": "ok",
+      "detail": "0/58 contract tests passed"
+    },
+    "unit": {
+      "value": 70,
+      "weight": 15,
+      "effectiveWeight": 17.647058823529413,
+      "contribution": 12.35294117647059,
+      "status": "ok",
+      "detail": "121/121 unit tests passed; AC coverage 40% (8/20)"
+    },
+    "a11y": {
+      "value": 0,
+      "weight": 20,
+      "effectiveWeight": 23.529411764705884,
+      "contribution": 0,
+      "status": "ok",
+      "detail": "0: the widget is not rendered (AC-1.1/AC-1.2 contract tests failing)"
+    },
+    "responsive": {
+      "value": 0,
+      "weight": 15,
+      "effectiveWeight": 17.647058823529413,
+      "contribution": 0,
+      "status": "ok",
+      "detail": "0: the widget is not rendered (AC-1.1/AC-1.2 contract tests failing)"
+    },
+    "visual": {
+      "value": 0,
+      "weight": 10,
+      "effectiveWeight": 11.764705882352942,
+      "contribution": 0,
+      "status": "ok",
+      "detail": "0: the widget is not rendered (AC-1.1/AC-1.2 contract tests failing)"
+    },
+    "judge": {
+      "value": null,
+      "weight": 15,
+      "effectiveWeight": 0,
+      "contribution": 0,
+      "status": "off",
+      "detail": "judge off; its weight is spread over the other signals"
+    }
+  },
+  "missing": [],
+  "testCount": 121,
+  "contract": {
+    "passed": 0,
+    "total": 58
+  },
+  "judgeScores": null,
+  "visualRegions": null,
+  "failures": [
+    {
+      "source": "contract",
+      "acId": "AC-1.1",
+      "title": "AC-1 renders the design › AC-1.1 shows the label, the score text, the heading and the feefo logo",
+      "file": "review/contract/rendering.spec.ts:28",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-1.2",
+      "title": "AC-1 renders the design › AC-1.2 the breakdown has exactly 5 rows, ordered 5 down to 1, with the reference counts",
+      "file": "review/contract/rendering.spec.ts:37",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-1.3",
+      "title": "AC-1 renders the design › AC-1.3 the 5-star bar fill is that rating's share of the total",
+      "file": "review/contract/rendering.spec.ts:52",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-1.3",
+      "title": "AC-1 renders the design › AC-1.3 the 4-star bar fill is that rating's share of the total",
+      "file": "review/contract/rendering.spec.ts:52",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-1.3",
+      "title": "AC-1 renders the design › AC-1.3 the 3-star bar fill is that rating's share of the total",
+      "file": "review/contract/rendering.spec.ts:52",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-1.3",
+      "title": "AC-1 renders the design › AC-1.3 the 2-star bar fill is that rating's share of the total",
+      "file": "review/contract/rendering.spec.ts:52",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-1.3",
+      "title": "AC-1 renders the design › AC-1.3 the 1-star bar fill is that rating's share of the total",
+      "file": "review/contract/rendering.spec.ts:52",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-1.4",
+      "title": "AC-1 renders the design › AC-1.4 the stars are filled [1, 1, 1, 1, 0.6] and the fifth star is 60% filled",
+      "file": "review/contract/rendering.spec.ts:67",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-1.5",
+      "title": "AC-1 renders the design › AC-1.5 the counts are shown in en-GB number format, in order 5 to 1",
+      "file": "review/contract/rendering.spec.ts:81",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-2.2",
+      "title": "AC-2.2 empty state › AC-2.2 with zero reviews the widget says \"No reviews yet\"",
+      "file": "review/contract/empty.spec.ts:12",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-2.2",
+      "title": "AC-2.2 empty state › AC-2.2 with zero reviews no NaN or Infinity is rendered",
+      "file": "review/contract/empty.spec.ts:18",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-2.2",
+      "title": "AC-2.2 empty state › AC-2.2 with zero reviews no star is filled",
+      "file": "review/contract/empty.spec.ts:31",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.1",
+      "title": "AC-3 accessibility › AC-3.1 the widget is a <section> named \"Product rating\"",
+      "file": "review/contract/accessibility.spec.ts:45",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.2",
+      "title": "AC-3 accessibility › AC-3.2 the star graphic is hidden from assistive technology",
+      "file": "review/contract/accessibility.spec.ts:53",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.2",
+      "title": "AC-3 accessibility › AC-3.2 a text alternative \"4.6 out of 5\" is exposed",
+      "file": "review/contract/accessibility.spec.ts:66",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.3",
+      "title": "AC-3 accessibility › AC-3.3 the breakdown is a <ul> of 5 <li> rows",
+      "file": "review/contract/accessibility.spec.ts:72",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.3",
+      "title": "AC-3 accessibility › AC-3.3 static rows are named \"N stars: C reviews (P%)\"",
+      "file": "review/contract/accessibility.spec.ts:85",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.3",
+      "title": "AC-3 accessibility › AC-3.3 interactive rows are named \"N stars: C reviews (P%)\", \"1 star\" in the singular",
+      "file": "review/contract/accessibility.spec.ts:95",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.4",
+      "title": "AC-3 accessibility › AC-3.4 \"Excellent\" is sentence case in the DOM and uppercase through CSS",
+      "file": "review/contract/accessibility.spec.ts:107",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.4",
+      "title": "AC-3 accessibility › AC-3.4 \"4.6 out of 5\" is sentence case in the DOM and uppercase through CSS",
+      "file": "review/contract/accessibility.spec.ts:107",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.5",
+      "title": "AC-3 accessibility › AC-3.5 the logo is an <img alt=\"feefo\">",
+      "file": "review/contract/accessibility.spec.ts:122",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.5",
+      "title": "AC-3 accessibility › AC-3.5 the small breakdown stars are decorative",
+      "file": "review/contract/accessibility.spec.ts:131",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.6",
+      "title": "AC-3 accessibility › AC-3.6 axe reports 0 WCAG 2.2 AA violations in the default state",
+      "file": "review/contract/accessibility.spec.ts:154",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.6",
+      "title": "AC-3 accessibility › AC-3.6 axe reports 0 WCAG 2.2 AA violations in the static state",
+      "file": "review/contract/accessibility.spec.ts:160",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.6",
+      "title": "AC-3 accessibility › AC-3.6 axe reports 0 WCAG 2.2 AA violations with a row selected",
+      "file": "review/contract/accessibility.spec.ts:166",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-3.7",
+      "title": "AC-3 accessibility › AC-3.7 a keyboard-focused row has a visible focus indicator with at least 3:1 contrast",
+      "file": "review/contract/accessibility.spec.ts:175",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-4.1",
+      "title": "AC-4 interactions › AC-4.1 without onRatingSelect the rows are not buttons",
+      "file": "review/contract/interactions.spec.ts:26",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-4.1",
+      "title": "AC-4 interactions › AC-4.1 without onRatingSelect nothing in the widget is a tab stop",
+      "file": "review/contract/interactions.spec.ts:34",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-4.2",
+      "title": "AC-4 interactions › AC-4.2 with onRatingSelect each row is a <button aria-pressed=\"false\">",
+      "file": "review/contract/interactions.spec.ts:46",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-4.2",
+      "title": "AC-4 interactions › AC-4.2 clicking an unselected row selects it and reports the rating",
+      "file": "review/contract/interactions.spec.ts:59",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-4.3",
+      "title": "AC-4 interactions › AC-4.3 clicking the selected row again clears the selection",
+      "file": "review/contract/interactions.spec.ts:69",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-4.4",
+      "title": "AC-4 interactions › AC-4.4 selecting another row moves the selection, only one row is ever pressed",
+      "file": "review/contract/interactions.spec.ts:82",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-4.5",
+      "title": "AC-4 interactions › AC-4.5 Tab reaches the rows in order 5 to 1",
+      "file": "review/contract/interactions.spec.ts:102",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-4.5",
+      "title": "AC-4 interactions › AC-4.5 Enter toggles the focused row",
+      "file": "review/contract/interactions.spec.ts:114",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-4.5",
+      "title": "AC-4 interactions › AC-4.5 Space toggles the focused row",
+      "file": "review/contract/interactions.spec.ts:130",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-4.7",
+      "title": "AC-4 interactions › AC-4.7 a selected row looks different without relying on colour alone",
+      "file": "review/contract/interactions.spec.ts:149",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.1",
+      "title": "at a 320px viewport › AC-5.1 320px: the widget fills its container up to a 420px maximum",
+      "file": "review/contract/responsive.spec.ts:57",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.1",
+      "title": "at a 768px viewport › AC-5.1 768px: the widget fills its container up to a 420px maximum",
+      "file": "review/contract/responsive.spec.ts:57",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.1",
+      "title": "at a 1280px viewport › AC-5.1 1280px: the widget fills its container up to a 420px maximum",
+      "file": "review/contract/responsive.spec.ts:57",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.1",
+      "title": "at a 1280px viewport › AC-5.1 1280px: the widget is at most 420px wide and centred",
+      "file": "review/contract/responsive.spec.ts:80",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.2",
+      "title": "at a 320px viewport › AC-5.2 320px: the page does not scroll horizontally",
+      "file": "review/contract/responsive.spec.ts:23",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.2",
+      "title": "at a 320px viewport › AC-5.2 320px: no text in the widget is clipped, outside the widget or overlapping",
+      "file": "review/contract/responsive.spec.ts:33",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.2",
+      "title": "at a 320px viewport › AC-5.2 320px: all 5 rows are visible",
+      "file": "review/contract/responsive.spec.ts:41",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.2",
+      "title": "at a 768px viewport › AC-5.2 768px: the page does not scroll horizontally",
+      "file": "review/contract/responsive.spec.ts:23",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.2",
+      "title": "at a 768px viewport › AC-5.2 768px: no text in the widget is clipped, outside the widget or overlapping",
+      "file": "review/contract/responsive.spec.ts:33",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.2",
+      "title": "at a 768px viewport › AC-5.2 768px: all 5 rows are visible",
+      "file": "review/contract/responsive.spec.ts:41",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.2",
+      "title": "at a 1280px viewport › AC-5.2 1280px: the page does not scroll horizontally",
+      "file": "review/contract/responsive.spec.ts:23",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.2",
+      "title": "at a 1280px viewport › AC-5.2 1280px: no text in the widget is clipped, outside the widget or overlapping",
+      "file": "review/contract/responsive.spec.ts:33",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.2",
+      "title": "at a 1280px viewport › AC-5.2 1280px: all 5 rows are visible",
+      "file": "review/contract/responsive.spec.ts:41",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.3",
+      "title": "at a 320px viewport › AC-5.3 the widget is a size container, so it adapts to the space it is given",
+      "file": "review/contract/responsive.spec.ts:98",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.3",
+      "title": "at a 320px viewport › AC-5.3 at narrow widths the counts stay visible",
+      "file": "review/contract/responsive.spec.ts:110",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-5.4",
+      "title": "text zoom › AC-5.4 text sizes are relative: doubling the root font size enlarges the text",
+      "file": "review/contract/responsive.spec.ts:127",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-6.1",
+      "title": "AC-6 visual fidelity › AC-6.1 the font is Poppins, loaded and served from the app itself",
+      "file": "review/contract/visual.spec.ts:278",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-6.2",
+      "title": "AC-6 visual fidelity › AC-6.2 bar colours come from the reference tokens",
+      "file": "review/contract/visual.spec.ts:317",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-6.3",
+      "title": "AC-6 visual fidelity › at the reference width › AC-6.3 captures the widget in its 360px wrapper for the similarity score",
+      "file": "review/contract/visual.spec.ts:329",
+      "message": "Error: the widget is visible in ?visual=1 expect(locator).toBeVisible() failed Locator: getByTestId('product-rating')"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-6.3",
+      "title": "AC-6 visual fidelity › at a 320px viewport › AC-6.3 captures a full-page screenshot at 320px",
+      "file": "review/contract/visual.spec.ts:429",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-6.3",
+      "title": "AC-6 visual fidelity › at a 768px viewport › AC-6.3 captures a full-page screenshot at 768px",
+      "file": "review/contract/visual.spec.ts:429",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    },
+    {
+      "source": "contract",
+      "acId": "AC-6.3",
+      "title": "AC-6 visual fidelity › at a 1280px viewport › AC-6.3 captures a full-page screenshot at 1280px",
+      "file": "review/contract/visual.spec.ts:429",
+      "message": "Error: expect(locator).toBeVisible() failed Locator: getByTestId('product-rating') Expected: visible"
+    }
+  ],
+  "notes": []
+}
