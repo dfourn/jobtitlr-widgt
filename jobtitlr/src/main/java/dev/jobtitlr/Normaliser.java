@@ -1,5 +1,6 @@
 package dev.jobtitlr;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -41,12 +42,16 @@ public final class Normaliser {
     public Normaliser(List<String> titles, SimilarityScorer scorer, double minimumQuality) {
         Objects.requireNonNull(titles, "titles must not be null");
         Objects.requireNonNull(scorer, "scorer must not be null");
-        if (titles.isEmpty()) {
+        // Snapshot the caller's list once and validate the snapshot, so a
+        // concurrent mutation of the caller's list cannot slip an unvalidated
+        // title past validation between the two passes.
+        List<String> snapshot = new ArrayList<>(titles);
+        if (snapshot.isEmpty()) {
             throw new IllegalArgumentException("titles must not be empty");
         }
         Set<String> seen = new HashSet<>();
-        for (int i = 0; i < titles.size(); i++) {
-            String title = titles.get(i);
+        for (int i = 0; i < snapshot.size(); i++) {
+            String title = snapshot.get(i);
             Objects.requireNonNull(title, "titles[" + i + "] must not be null");
             if (title.isBlank()) {
                 throw new IllegalArgumentException("titles[" + i + "] must not be blank");
@@ -59,7 +64,7 @@ public final class Normaliser {
         if (!(minimumQuality >= 0.0 && minimumQuality <= 1.0)) {
             throw new IllegalArgumentException("minimumQuality must be within [0, 1]: " + minimumQuality);
         }
-        this.titles = List.copyOf(titles);
+        this.titles = List.copyOf(snapshot);
         this.scorer = scorer;
         this.minimumQuality = minimumQuality;
     }
@@ -89,6 +94,7 @@ public final class Normaliser {
      * @return the best title, or the stripped input when there is no match
      * @throws NullPointerException if jobTitle is null
      * @throws IllegalArgumentException if jobTitle is blank
+     * @throws IllegalStateException if the scorer returns a value outside [0, 1] or NaN
      */
     public String normalise(String jobTitle) {
         requireJobTitle(jobTitle);
