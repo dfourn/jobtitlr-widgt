@@ -6,6 +6,8 @@ export interface BrandLineProps {
   readonly heading: string;
   /** The heading's id, so the section can point at it with aria-labelledby. */
   readonly headingId: string;
+  /** Extra class for the line, so the parent can place it in its layout. */
+  readonly className?: string | undefined;
 }
 
 /**
@@ -13,9 +15,9 @@ export interface BrandLineProps {
  * sibling of the heading, never inside it: an img inside the h2 would turn
  * the section's accessible name into "Product Rating feefo" (AC-3.1).
  */
-export function BrandLine({ heading, headingId }: BrandLineProps) {
+export function BrandLine({ heading, headingId, className }: BrandLineProps) {
   return (
-    <div className={styles.line}>
+    <div className={className === undefined ? styles.line : `${styles.line} ${className}`}>
       <h2 id={headingId} className={styles.heading}>
         {heading}
       </h2>

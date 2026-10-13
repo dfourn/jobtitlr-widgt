@@ -11,15 +11,23 @@ export interface RatingBreakdownProps {
   readonly selectedRating: StarRating | null;
   /** The toggle callback, or null in static mode (AC-4.1). */
   readonly onToggle: ((rating: StarRating) => void) | null;
+  /** Extra class for the list, so the parent can place it in its layout. */
+  readonly className?: string | undefined;
 }
 
 /**
  * The per-rating breakdown as a real list (AC-3.3): a ul of five rows,
  * 5 down to 1 (AC-1.2).
  */
-export function RatingBreakdown({ rows, locale, selectedRating, onToggle }: RatingBreakdownProps) {
+export function RatingBreakdown({
+  rows,
+  locale,
+  selectedRating,
+  onToggle,
+  className,
+}: RatingBreakdownProps) {
   return (
-    <ul className={styles.list}>
+    <ul className={className === undefined ? styles.list : `${styles.list} ${className}`}>
       {rows.map((row) => (
         <BreakdownRow
           key={row.rating}

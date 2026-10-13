@@ -27,6 +27,19 @@
   padding: 2.25rem 1.375rem 1.4375rem;
 }
 
+/*
+ * The brand line is first in the DOM (the heading leads for assistive
+ * technology) but drawn after the score, as in the reference; the breakdown
+ * follows it. Label, stars and score keep the default order 0.
+ */
+.brand {
+  order: 1;
+}
+
+.breakdown {
+  order: 2;
+}
+
 /* Tighten only spacing at narrow containers (AC-5.3); nothing is hidden here. */
 @container (max-width: 20rem) {
   .body {

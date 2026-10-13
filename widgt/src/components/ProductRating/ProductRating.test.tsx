@@ -96,6 +96,15 @@ describe('ProductRating', () => {
     expect(widget).toHaveAttribute('data-testid', 'product-rating');
   });
 
+  it('AC-3.1 the heading comes first in the DOM, so heading navigation lands before the score', () => {
+    renderWidget();
+    const heading = screen.getByRole('heading', { name: 'Product Rating' });
+    for (const text of ['Excellent', '4.6 out of 5']) {
+      const position = heading.compareDocumentPosition(screen.getByText(text, { exact: true }));
+      expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
   it('AC-3.2 the star graphic is hidden from assistive technology and the logo is the only image', () => {
     renderWidget();
     expect(screen.getAllByRole('img')).toHaveLength(1);
