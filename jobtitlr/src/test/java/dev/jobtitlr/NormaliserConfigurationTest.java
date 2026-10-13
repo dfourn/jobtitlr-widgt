@@ -60,4 +60,19 @@ class NormaliserConfigurationTest {
                 () -> new Normaliser(Arrays.asList("Architect", " architect "), new TokenDiceScorer(), 0.2));
         assertEquals("duplicate title: \"architect\"", exception.getMessage());
     }
+
+    @ParameterizedTest(name = "{0} rejects the minimum quality {1}")
+    @CsvSource({
+            "AC-8.5, -0.01",
+            "AC-8.5, 1.01",
+            "AC-8.5, NaN",
+            "AC-8.5, Infinity",
+            "AC-8.5, -Infinity"
+    })
+    @DisplayName("AC-8.5 minimumQuality outside [0, 1] or NaN is rejected")
+    void rejectsMinimumQualityOutsideUnitInterval(String id, double minimumQuality) {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new Normaliser(List.of("Architect"), new TokenDiceScorer(), minimumQuality));
+        assertEquals("minimumQuality must be within [0, 1]: " + minimumQuality, exception.getMessage());
+    }
 }
