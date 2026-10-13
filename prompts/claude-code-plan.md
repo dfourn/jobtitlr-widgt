@@ -1,6 +1,6 @@
 # Claude Code plan: finish the Feefo assessment
 
-> **Superseded:** [`docs/plans/master-plan.md`](docs/plans/master-plan.md) now supersedes this file's phase steps. The **Rules** section below still applies as written.
+> **Superseded:** [`docs/plans/master-plan.md`](../docs/plans/master-plan.md) now supersedes this file's phase steps. The **Rules** section below still applies as written.
 
 > Run from the repository root: `claude "Read prompts/claude-code-plan.md and follow it. Start with Phase 0."`
 > This file is committed on purpose so that AI use stays transparent. Earlier AI sessions are summarised in `docs/AI-USAGE.md`.

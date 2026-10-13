@@ -8,7 +8,7 @@ The demo page at 1280px, with the widget and its selection status line:
 
 ![The widgt demo page at 1280px](docs/screenshots/page-1280.png)
 
-The widget alone at the 360px reference width (`/?visual=1`), the exact image the review harness compares against the reference for its visual-similarity signal:
+The widget alone in its 360px reference wrapper (`/?visual=1`), the exact image the review harness compares against the reference for its visual-similarity signal:
 
 ![The widget at the 360px reference width](docs/screenshots/visual-widget.png)
 
