@@ -21,4 +21,12 @@ class NormaliserConfigurationTest {
                 () -> new Normaliser(List.of("Architect"), null, 0.2));
         assertEquals("scorer must not be null", scorerException.getMessage());
     }
+
+    @Test
+    @DisplayName("AC-8.2 an empty title list throws IllegalArgumentException")
+    void emptyTitleListThrows() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new Normaliser(List.of(), new TokenDiceScorer(), 0.2));
+        assertEquals("titles must not be empty", exception.getMessage());
+    }
 }
