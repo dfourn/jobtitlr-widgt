@@ -163,7 +163,7 @@ git clone <repository> clone && cd clone
 
 # Part 1 (jobtitlr)
 cd jobtitlr
-./mvnw verify                    # exit 0, "Tests run: 110, Failures: 0, Errors: 0, Skipped: 0"
+./mvnw verify                    # exit 0, "Tests run: 111, Failures: 0, Errors: 0, Skipped: 0"
 ./mvnw -q compile exec:java      # exit 0, prints the four example mappings
 cd ..
 
@@ -171,7 +171,7 @@ cd ..
 cd widgt
 npm ci                           # exit 0
 npx playwright install chromium  # exit 0
-npm run verify                   # exit 0, 472 vitest tests, review total 95.8/100
+npm run verify                   # exit 0, 473 vitest tests, review total 95.8/100
 npm run test:e2e                 # exit 0, 58 passed
 npm run dev &                    # background
 curl -s -o /dev/null -w '%{http_code}' http://localhost:5173/   # 200
@@ -179,3 +179,19 @@ kill $(lsof -ti tcp:5173)        # stop the dev server
 ```
 
 Do not run two Playwright-based commands concurrently (`npm run verify` and `npm run test:e2e` each drive Chromium against a dev server). `npm run review:lock`, `npm run loop` and `npm run test:watch` were not run: the first rewrites the locked contract, the second spends AI budget, and the third never exits.
+
+## 4. Re-verification for v1.0.1
+
+After `v1.0.0` a review of the submission led to small fixes on `fix/post-review` (see [`AI-USAGE.md`](AI-USAGE.md)): Levenshtein over code points with one new test, the tokeniser's patterns compiled once, the thread-safety contract tied to the scorer, `Demo` reusing one `Normaliser`, and the widget's heading moved first in the DOM with one new test. Sections 1 to 3 above describe the `v1.0.0` run; the reproduce block in section 3 carries the new counts.
+
+The branch tip (`61765e0` plus documentation-only commits) was re-verified in a fresh clone on 13 October 2026, same environment:
+
+| Command | Exit | Result |
+|---|---|---|
+| `./mvnw verify` (in `jobtitlr/`) | 0 | `Tests run: 111, Failures: 0, Errors: 0, Skipped: 0` |
+| `./mvnw -q compile exec:java` | 0 | The four example mappings, unchanged |
+| `npm ci` then `npm run verify` (in `widgt/`) | 0 | 473 vitest tests passed; gates G1 to G6 pass; contract 58/58, unit 173/173 (AC coverage 20/20), a11y 100 in all three states, responsive 16/16, visual 64.2; total 95.8/100, 0 failures |
+| `npm run test:e2e` | 0 | 58 passed |
+
+The review total and visual signal are identical to `v1.0.0`: the heading reorder changes the DOM, not the pixels.
+

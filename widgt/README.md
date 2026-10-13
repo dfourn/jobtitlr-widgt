@@ -51,12 +51,12 @@ The page keeps `.page` and `.container` as plain blocks: a flex or grid parent w
 ```text
 App (src/App.tsx)                  the demo page: picks a scenario from the URL
 └── ProductRating                  section root; derives the whole summary from counts
+    ├── BrandLine                  the h2 heading and the feefo logo img, as siblings; first in the DOM, drawn below the score
     ├── RatingLabel                "Excellent": sentence case in markup, uppercase via CSS
     ├── StarRow                    the five-star graphic; aria-hidden, decorative
     │   └── Star                   one star tile, fill 0-1 through the --fill custom property
     │       └── StarIcon           the svg glyph; aria-hidden, focusable="false"
     ├── ScoreText                  "4.6 out of 5" or "No reviews yet"; the stars' text alternative
-    ├── BrandLine                  the h2 heading and the feefo logo img, as siblings
     └── RatingBreakdown            a ul of rows, 5 down to 1
         └── BreakdownRow           an li: plain content, or a toggle button when interactive
 ```
@@ -83,9 +83,9 @@ Poppins is self-hosted (A-W9). `src/styles/global.css` imports weights 400, 500 
 
 The AC-3 group of spec 02, and how the build satisfies it:
 
-- The card is a `<section aria-labelledby>` pointed at its own `h2`, which defaults to "Product Rating" (AC-3.1). The logo is a sibling of the heading, never inside it, so it does not extend the section's accessible name.
+- The card is a `<section aria-labelledby>` pointed at its own `h2`, which defaults to "Product Rating" (AC-3.1). The logo is a sibling of the heading, never inside it, so it does not extend the section's accessible name. The heading is the first element in the card's DOM, so a screen reader moving by heading lands before the label and score; CSS `order` on the card's flex column keeps the reference's visual order.
 - The five-star row is `aria-hidden` because the score is already text: `ScoreText`'s visible "4.6 out of 5" serves as the graphic's text alternative (AC-3.2).
-- The breakdown is a real `ul`/`li` list; each row's accessible name, "5 stars: 952 reviews (77%)", comes from `aria-label` (AC-3.3).
+- The breakdown is a real `ul`/`li` list; each row's accessible name, "5 stars: 952 reviews (77.3%)", comes from `aria-label` (AC-3.3).
 - The label is sentence case in the markup and uppercased by CSS only (AC-3.4).
 - The logo `img` carries `alt="feefo"`; every decorative star graphic is `aria-hidden` (AC-3.5).
 - The recorded review run reports axe clean for the default, static and selected states: zero WCAG 2.2 AA violations (AC-3.6).

@@ -19,7 +19,7 @@ A JDK 21 or newer is required (`maven.compiler.release` is 21). The Maven wrappe
 
 ```sh
 cd jobtitlr
-./mvnw verify                 # compiles and runs the 110 JUnit tests
+./mvnw verify                 # compiles and runs the 111 JUnit tests
 ./mvnw -q compile exec:java   # demo: prints the brief's four example mappings
 ```
 
@@ -32,18 +32,22 @@ cd widgt
 npm ci
 npx playwright install chromium  # once, for the review and contract tests
 npm run dev                      # Vite dev server with the demo page
-npm test                         # 472 unit and component tests across 39 files
+npm test                         # 473 unit and component tests across 39 files
 npm run verify                   # typecheck, lint, tests and the strict review
 npm run test:e2e                 # the 58 locked contract tests
 ```
 
-Of the 472 tests, 172 cover the widget itself (domain logic and components); the other 300 cover the review harness.
+Of the 473 tests, 173 cover the widget itself (domain logic and components); the other 300 cover the review harness.
 
 ## Documentation
 
+The deliverables are `jobtitlr/` and `widgt/src/`. The folders `docs/plans/`, `docs/research/`, `prompts/` and `widgt/review/` record the process that built them and can be skipped on a first read.
+
+Comments and test names cite IDs from the documents below: `B1.x`/`B2.x` are brief items, `AC-x.y` and `NFR-x` are acceptance criteria and non-functional requirements in the specs, and `A-Jx`/`A-Wx` are assumptions.
+
 - [`docs/brief/`](docs/brief/) — the assessment brief, transcribed from the PDF with item IDs (`B1.x`, `B2.x`) so specs and tests can cite it.
 - Specs: [`01-jobtitlr.md`](docs/specs/01-jobtitlr.md) (public API, algorithm and acceptance criteria for the normaliser), [`02-widgt.md`](docs/specs/02-widgt.md) (the widget) and [`03-review-loop.md`](docs/specs/03-review-loop.md) (the self-reviewing loop that built it).
-- Decisions: [`docs/decisions/`](docs/decisions/) — ADR 0001 (widgt styling approach) and ADR 0002 (jobtitlr matching algorithm).
+- Decisions: [`docs/decisions/`](docs/decisions/) — ADR 0001 (widgt styling approach), ADR 0002 (jobtitlr matching algorithm) and ADR 0004 (the self-reviewing loop). Number 0003 was reserved for the optional job-title standardiser extension, which was not built.
 - Plans: [`docs/plans/`](docs/plans/) — the master plan and the per-phase plans and guides the work followed.
 - Assumptions: [`docs/ASSUMPTIONS.md`](docs/ASSUMPTIONS.md) — the recorded decisions behind default behaviour where the brief was silent.
 - Verification: [`docs/TESTING.md`](docs/TESTING.md) — a final fresh-clone run of every command, with the brief-to-test traceability.
