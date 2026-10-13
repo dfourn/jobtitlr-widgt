@@ -21,7 +21,7 @@
         "passed": 0,
         "total": 58
       },
-      "sha": null,
+      "sha": "e7b6a21",
       "summary": "baseline",
       "costUsd": null,
       "feedback": {
@@ -99,6 +99,78 @@
           }
         ],
         "visualRegions": null
+      }
+    },
+    {
+      "iteration": 1,
+      "total": 95.8,
+      "gatesPassed": true,
+      "failedGates": [],
+      "signals": {
+        "contract": 100,
+        "unit": 100,
+        "a11y": 100,
+        "responsive": 100,
+        "visual": 64.2,
+        "judge": null
+      },
+      "contract": {
+        "passed": 58,
+        "total": 58
+      },
+      "sha": null,
+      "summary": "Build the ProductRating widget and demo page: component tree (ProductRating, RatingLabel, StarRow, Star, StarIcon, ScoreText, BrandLine, RatingBreakdown, BreakdownRow), CSS-module tokens, URL-driven demo scenarios, and full unit-test coverage for the uncovered AC IDs.",
+      "costUsd": null,
+      "feedback": {
+        "gates": [],
+        "failures": [],
+        "visualRegions": [
+          {
+            "name": "label",
+            "similarity": 0.6361867704280155,
+            "best": {
+              "dx": 0,
+              "dy": -5,
+              "similarity": 1
+            }
+          },
+          {
+            "name": "stars",
+            "similarity": 0.8749466495945369,
+            "best": {
+              "dx": 1,
+              "dy": -1,
+              "similarity": 0.9562853655830467
+            }
+          },
+          {
+            "name": "score",
+            "similarity": 0.5838068181818181,
+            "best": {
+              "dx": 0,
+              "dy": -3,
+              "similarity": 0.7451669595782073
+            }
+          },
+          {
+            "name": "brand",
+            "similarity": 0.5692019950124688,
+            "best": {
+              "dx": 8,
+              "dy": 2,
+              "similarity": 0.7441197434069851
+            }
+          },
+          {
+            "name": "rows",
+            "similarity": 0.5215798045602607,
+            "best": {
+              "dx": 5,
+              "dy": -3,
+              "similarity": 0.9109543751377562
+            }
+          }
+        ]
       }
     }
   ]

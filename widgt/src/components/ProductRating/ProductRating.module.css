@@ -1,0 +1,34 @@
+/*
+ * The card. It fills the space the host gives it, up to the reference card's
+ * 420px, and centres itself (AC-5.1). `container-type` on the root is what the
+ * descendants' @container rules query (AC-5.3), so the root itself carries no
+ * padding: a container rule can only style the container's descendants.
+ */
+.root {
+  composes: tokens from '../../styles/tokens.module.css';
+  width: 100%;
+  max-width: 26.25rem;
+  margin-inline: auto;
+  container-type: inline-size;
+  font-family: Poppins, system-ui, sans-serif;
+  line-height: 1.25;
+  color: var(--widgt-color-text);
+  background: var(--widgt-color-surface);
+  border: 1px solid var(--widgt-color-border);
+  border-radius: 0.6875rem;
+}
+
+/* The centred column of the card; the breakdown stretches back out. */
+.body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2.25rem 1.375rem 1.4375rem;
+}
+
+/* Tighten only spacing at narrow containers (AC-5.3); nothing is hidden here. */
+@container (max-width: 20rem) {
+  .body {
+    padding: 1.5rem 1rem 1rem;
+  }
+}

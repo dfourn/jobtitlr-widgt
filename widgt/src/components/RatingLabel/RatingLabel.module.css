@@ -1,0 +1,8 @@
+.label {
+  margin: 0;
+  font-size: 1.34375rem;
+  font-weight: 600;
+  letter-spacing: 0.2rem;
+  text-transform: uppercase; /* AC-3.4: uppercase is a styling concern */
+  color: var(--widgt-color-text);
+}

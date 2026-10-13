@@ -1,0 +1,19 @@
+.line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-top: 1.25rem;
+}
+
+.heading {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--widgt-color-muted);
+}
+
+.logo {
+  height: 1.5rem;
+  width: auto;
+}

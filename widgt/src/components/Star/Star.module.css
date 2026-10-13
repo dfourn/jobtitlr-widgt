@@ -1,0 +1,20 @@
+/* The tile is a rounded square filled to --fill with the accent colour. */
+.tile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.25rem;
+  color: #fff; /* the glyph cut out of the tile */
+  background: linear-gradient(
+    to right,
+    var(--widgt-color-accent) calc(var(--fill) * 100%),
+    var(--widgt-color-star-empty) 0
+  );
+}
+
+.tile svg {
+  width: 1.625rem;
+  height: 1.625rem;
+}

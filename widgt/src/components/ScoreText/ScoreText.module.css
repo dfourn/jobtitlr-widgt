@@ -1,0 +1,11 @@
+.score,
+.empty {
+  margin: 1rem 0 0;
+  font-size: 0.9375rem;
+  letter-spacing: 0.1em;
+  color: var(--widgt-color-muted);
+}
+
+.score {
+  text-transform: uppercase; /* AC-3.4: uppercase is a styling concern */
+}
