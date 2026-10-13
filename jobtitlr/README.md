@@ -110,7 +110,7 @@ Worked examples with the default titles (spec 01, section 4):
 `./mvnw test` (run without `-q`, which hides the counts; the exit code is what judges pass or fail) ends with:
 
 ```text
-Tests run: 106, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 108, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 Each test's `@DisplayName` starts with the acceptance-criterion ID it covers, so a failure names the criterion that broke. What each test class covers, and why it exists:
@@ -120,7 +120,7 @@ Each test's `@DisplayName` starts with the acceptance-criterion ID it covers, so
 | `TokeniserTest` | 9 | AC-2.1 to AC-2.4, AC-7.3. Tokenisation rules: lowercasing with `Locale.ROOT`, whitespace handling, punctuation as separators, `#` and `+` kept inside tokens, and punctuation-only text yielding no tokens. |
 | `LevenshteinTest` | 12 | AC-3.5. The distance and similarity values, including the brief's typo examples and symmetry of the two measures. |
 | `MatchResultTest` | 10 | AC-9.2. The record's own validation: null and blank titles, quality outside `[0, 1]` or NaN rejected, endpoints 0.0 and 1.0 accepted. |
-| `TokenDiceScorerTest` | 19 | AC-3.1 to AC-3.4, AC-4.1 to AC-4.4, AC-4.6. The score itself: the brief's values, identical and disjoint titles, one-to-one pairing, zero-token safety, symmetry and boundedness over seeded random pairs, and the configurable token threshold. |
+| `TokenDiceScorerTest` | 21 | AC-3.1 to AC-3.4, AC-4.1 to AC-4.4, AC-4.6. The score itself: the brief's values, identical and disjoint titles, one-to-one pairing, zero-token safety, symmetry and boundedness over seeded random pairs, and the configurable token threshold. |
 | `NormaliserSelectionTest` | 10 | AC-4.5, AC-5.1 to AC-5.3, AC-6.1, AC-6.2, AC-9.1. How the best title is chosen: highest `q` wins, first-listed wins a tie, results are repeatable, the no-match rules, and a custom scorer injected without changing `Normaliser`. |
 | `NormaliserBriefTest` | 6 | AC-1.1 to AC-1.5, AC-5.2. The brief's four examples and its sample code, compiled and run verbatim. |
 | `NormaliserInputTest` | 13 | AC-2.1 to AC-2.3, AC-2.5, AC-3.1 to AC-3.3, AC-7.1 to AC-7.3. Input handling end to end: case, whitespace, punctuation, configured form returned, typo and plural tolerance, and null, blank and punctuation-only inputs. |

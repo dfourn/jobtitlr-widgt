@@ -4,7 +4,7 @@
 |---|---|
 | Status | In effect (D1: a delta against `guide-jobtitlr.md`, which carries the research; no questions, so no approval stop) |
 | Branch | `feat/jobtitlr-core`, from `main` at `b58cea9` |
-| Guides | [`guide-jobtitlr.md`](guide-jobtitlr.md) §2–§8; master plan §6 and §3 |
+| Guides | [`guide-jobtitlr.md`](guide-jobtitlr.md) (the guide lives on `chore/phase-0` and the link resolves on `main` once H1 lands) §2–§8; master plan §6 and §3 |
 
 ## Delta against the guide
 
