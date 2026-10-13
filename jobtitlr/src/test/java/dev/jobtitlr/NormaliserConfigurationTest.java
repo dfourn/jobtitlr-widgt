@@ -75,4 +75,15 @@ class NormaliserConfigurationTest {
                 () -> new Normaliser(List.of("Architect"), new TokenDiceScorer(), minimumQuality));
         assertEquals("minimumQuality must be within [0, 1]: " + minimumQuality, exception.getMessage());
     }
+
+    @ParameterizedTest(name = "{0} accepts the minimum quality {1}")
+    @CsvSource({
+            "AC-8.5, 0.0",
+            "AC-8.5, 1.0"
+    })
+    @DisplayName("AC-8.5 minimumQuality 0.0 and 1.0 are accepted")
+    void acceptsBoundaryMinimumQuality(String id, double minimumQuality) {
+        Normaliser normaliser = new Normaliser(List.of("Architect"), new TokenDiceScorer(), minimumQuality);
+        assertEquals("Architect", normaliser.normalise("Architect"));
+    }
 }
