@@ -19,6 +19,7 @@ This project was built with help from Claude (Anthropic), working in Cowork with
 | 2026-10-11 | Wrote 58 Playwright contract tests from spec 02 before any component existed (`feat/widgt-contract`) | Claude subagent, in its own worktree | Checked against a throwaway implementation and 6 deliberate bugs before they were locked |
 | 2026-10-11 | Built the review harness and loop runner from spec 03 (`feat/widgt-review`) | Claude subagent, in its own worktree | One commit marked green still had a failing test, because piping the run through `grep` hid the exit code. The next commit fixes it |
 | 2026-10-11 | Wrote the Claude Code plan (`prompts/claude-code-plan.md`). An independent subagent reviewed it, and the review's findings were applied | Claude (Cowork) | I asked for the plan → implement workflow with review checkpoints |
+| 2026-10-13 | Built the jobtitlr core test-first on `feat/jobtitlr-core`: the D4 spec edits, the Maven scaffold, TDD cycles C1–C16, ADR 0002 and the README | GLM (Z.ai) via Claude Code subagents | 86 commits, 106 tests. A GLM orchestrator delegated each work package to a fresh implementer subagent and re-checked every claim; an adversarial reviewer subagent (also GLM) found no blockers or majors, and its two confirmed findings were fixed. The branch was cut before the Phase 0 merge per Dan's request for unattended overnight progress; no merge happened without him |
 
 ## How to spot AI-assisted commits
 Every commit made with AI help ends with a `Co-Authored-By: Claude ...` trailer.
