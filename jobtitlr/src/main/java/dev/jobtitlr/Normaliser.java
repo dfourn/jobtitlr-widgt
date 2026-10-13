@@ -31,10 +31,14 @@ public final class Normaliser {
      * @param scorer the strategy that scores an input against a candidate title
      * @param minimumQuality the quality a match must reach to be accepted
      * @throws NullPointerException if titles or scorer is null
+     * @throws IllegalArgumentException if titles is empty
      */
     public Normaliser(List<String> titles, SimilarityScorer scorer, double minimumQuality) {
         Objects.requireNonNull(titles, "titles must not be null");
         Objects.requireNonNull(scorer, "scorer must not be null");
+        if (titles.isEmpty()) {
+            throw new IllegalArgumentException("titles must not be empty");
+        }
         this.titles = titles;
         this.scorer = scorer;
         this.minimumQuality = minimumQuality;
