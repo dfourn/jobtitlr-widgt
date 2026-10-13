@@ -24,7 +24,7 @@ The deliverable is a **widget**: a small, self-contained component that will be 
 ## Decision
 **CSS Modules, with design tokens as CSS custom properties on the widget root, plus container queries for responsiveness.**
 
-- Tokens live in `src/styles/tokens.css` and are scoped to `.root`. A host can theme the widget by overriding variables such as `--widgt-color-accent`.
+- Tokens live in `widgt/src/styles/tokens.module.css` (a CSS Module) and are composed into the widget's `.root` class, so they apply at the widget root. A host can theme the widget by overriding variables such as `--widgt-color-accent`.
 - The widget root sets `container-type: inline-size`, and the layout adapts with `@container` rules.
 - Values that come from data, such as bar widths and star fill, are passed in as a single custom property per element (`style={{'--fill': '0.6'}}`), so there are no inline style objects scattered through the components.
 

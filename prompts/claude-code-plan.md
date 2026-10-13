@@ -1,5 +1,7 @@
 # Claude Code plan: finish the Feefo assessment
 
+> **Superseded:** [`docs/plans/master-plan.md`](docs/plans/master-plan.md) now supersedes this file's phase steps. The **Rules** section below still applies as written.
+
 > Run from the repository root: `claude "Read prompts/claude-code-plan.md and follow it. Start with Phase 0."`
 > This file is committed on purpose so that AI use stays transparent. Earlier AI sessions are summarised in `docs/AI-USAGE.md`.
 
@@ -33,13 +35,13 @@ I (Dan) work with AI in a **plan -> implement** pattern. Every phase follows the
   - UI: *how I approached it*, not pixels. Component design, TS modelling, responsiveness, accessibility, tests and maintainability (B2.17).
   - Optimise for these, and for code I can explain line by line.
 
-**Current state.** Branch `feat/widgt` has not been merged into `main` yet. `main` has only docs.
-- `widgt/src/domain/` is done: pure rating logic built with TDD, 109 tests including seeded fast-check properties.
+**Current state at the time of writing.** Branch `feat/widgt` has not been merged into `main` yet. `main` has only docs.
+- `widgt/src/domain/` is done: pure rating logic built with TDD, including seeded fast-check properties; `npm test` now runs 472 vitest tests across 39 files over `src/` and `review/src/` together.
 - `widgt/review/contract/` holds **58 Playwright contract tests that are red on purpose**: no components exist yet.
   - They are **locked**: gate G4 checks them against checksums in `review/contract.lock`.
   - **Never edit** `review/contract/**`, `review/reference/**`, `review/rubric.json`, `review/playwright.config.ts` or `review/src/**` without my explicit approval.
   - If they must change, I run `npm run review:lock` and commit it with a reason.
-- `widgt/review/src/` is the harness: gates G1–G6, the score, the report, the scoreboard, `index.html`, and the claude/glm/external generators. It has 201 tests. Read `widgt/review/README.md`.
+- `widgt/review/src/` is the harness: gates G1–G6, the score, the report, the scoreboard, `index.html`, and the claude/glm/external generators. Its tests are part of the 472 above. Read `widgt/review/README.md`.
 - `jobtitlr/` is empty.
 
 ---
@@ -146,8 +148,8 @@ I (Dan) work with AI in a **plan -> implement** pattern. Every phase follows the
       - the commands it may run: `npm test`, `npm run typecheck`, `npm run lint`, `npm run build`. It must not run `git` or edit any config file.
    3. **Separation check.** After the generator finishes, this must print nothing:
       `git status --porcelain -- review ':!review/runs' package.json package-lock.json eslint.config.js 'tsconfig*.json' vite.config.ts`
-      If it prints anything, revert those changes and tell me.
-   4. **Resume** with `npm run loop -- --generator external --resume --note "<one line: what changed>"`. That runs the review, appends a row to the scoreboard, updates `index.html`, and commits. It then either exits 75 again (next iteration) or 0 (stopped).
+      Then `node review/src/guard.ts --check-only` must exit 0. If either fails, revert those changes and tell me.
+   4. **Resume** with `node review/src/guard.ts && npm run loop -- --generator external --resume --note "<one line: what changed>"`; never resume without the guard. That runs the review, appends a row to the scoreboard, updates `index.html`, and commits. It then either exits 75 again (next iteration) or 0 (stopped).
    5. **After each iteration, show me the scoreboard row and the top three failures.**
 4. **Stop conditions:**
    - the score is ≥ 90 with all gates passing; or
