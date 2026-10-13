@@ -37,7 +37,7 @@ Accountant -> Accountant
 Chief Accountant -> Accountant
 ```
 
-On Windows, run `mvnw.cmd` instead of `./mvnw`. The repository stores text files with LF line endings, including the batch file, which is fine for `mvnw.cmd` on modern Windows.
+On Windows, run `mvnw.cmd` instead of `./mvnw`.
 
 **IntelliJ IDEA**: File → Open → select `jobtitlr/pom.xml` → Open as Project, then set the project SDK to a JDK 21 or newer (File → Project Structure → Project).
 

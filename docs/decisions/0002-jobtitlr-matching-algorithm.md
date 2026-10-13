@@ -16,7 +16,7 @@ The `Normaliser` maps a free-text job title to the closest title from a fixed li
 | Option | For | Against |
 |---|---|---|
 | Whole-string Levenshtein | Gets the brief's four examples right. | "Chief Accountant" only reaches 0.625, and "Chef" -> "Architect" at 0.333, above the 0.2 floor: a false match. |
-| Jaro-Winkler | Ranks "Chief Accountant" correctly: "Accountant" 0.842 against "Architect" 0.65. | "Chef" -> "Architect" at 0.574, above the floor, and the 0.842 against 0.65 margin is thin. It rewards shared prefixes and suits short names, not multi-word titles. |
+| Jaro-Winkler | Ranks "Chief Accountant" correctly: "Accountant" 0.842 against "Architect" 0.67. | "Chef" -> "Architect" at 0.574, above the floor, and the 0.842 against 0.67 margin is thin. It rewards shared prefixes and suits short names, not multi-word titles. |
 | TF-IDF | — | With four titles the IDF is degenerate, and without character n-grams it has no typo tolerance. |
 | Embeddings | An embedding-based scorer would plug into the same `SimilarityScorer` interface (spec 01 §8). | Need the network and an API key, are not deterministic, and are hard to explain line by line (spec 01 §8). |
 | **Token Dice + per-token Levenshtein (chosen)** | "Chef" scores 0.0; word order does not matter; extra and missing words are both penalised; typos are tolerated per token; deterministic; about 60 lines; every number is explainable. | The thresholds come from worked examples rather than data, and synonyms are out of reach without a lexicon. |
