@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Draft - awaiting review** |
+| Status | **Accepted** |
 | Project | `jobtitlr/` |
 | Language | Java 21, Maven, JUnit 5 |
 | Package | `dev.jobtitlr` |
@@ -40,6 +40,10 @@ Default normalised titles (from the brief):
 // Defaults: the four titles above, token-based scorer, minimum quality 0.2
 Normaliser n = new Normaliser();
 
+// Constants on Normaliser
+public static final List<String> DEFAULT_TITLES;      // the four titles above
+public static final double DEFAULT_MINIMUM_QUALITY;   // 0.2
+
 // Custom configuration
 Normaliser n = new Normaliser(List.of("Architect", "Accountant"));
 Normaliser n = new Normaliser(titles, scorer, minimumQuality);
@@ -54,7 +58,15 @@ record MatchResult(String title, double quality) {}
 interface SimilarityScorer {
     double score(String input, String candidate);    // must return 0.0..1.0
 }
+
+// The default scorer (section 4): token Dice with per-token Levenshtein
+class TokenDiceScorer implements SimilarityScorer {
+    public TokenDiceScorer()                         // token threshold 0.8
+    public TokenDiceScorer(double tokenThreshold)    // within [0, 1], not NaN, else IllegalArgumentException
+}
 ```
+
+Trimming means `String.strip()`. Configured titles are stored exactly as given; the duplicate check compares them stripped and lowercased (`Locale.ROOT`).
 
 Usage from the brief must compile and work unchanged:
 
@@ -74,7 +86,7 @@ String normalisedTitle = n.normalise("Java engineer"); // "Software engineer"
    q = 2 * sum(similarity of matched pairs) / (inputTokenCount + candidateTokenCount)
    ```
 
-   Always within `[0, 1]`. It is symmetric and penalises both missing words and extra words.
+   Always within `[0, 1]`. It is symmetric and penalises both missing words and extra words. If either string has no tokens, q = 0.0.
 5. **Select**: score every normalised title. The highest `q` wins. On a tie, the title listed first wins (deterministic).
 6. **Threshold**: a match is accepted only if `q > 0` and `q >= minimumQuality` (default `0.2`).
 
@@ -99,7 +111,7 @@ String normalisedTitle = n.normalise("Java engineer"); // "Software engineer"
 - **AC-1.2** `"C# engineer"` -> `"Software engineer"`.
 - **AC-1.3** `"Accountant"` -> `"Accountant"`.
 - **AC-1.4** `"Chief Accountant"` -> `"Accountant"`.
-- **AC-1.5** The brief's sample code (no-arg constructor, `normalise(String)` returning `String`) compiles and runs unchanged.
+- **AC-1.5** The brief's sample code (no-arg constructor, `normalise(String)` returning `String`) compiles and runs unchanged. The `Demo` class prints the four examples of AC-1.1 to AC-1.4.
 
 ### AC-2 Input handling
 
@@ -114,7 +126,8 @@ String normalisedTitle = n.normalise("Java engineer"); // "Software engineer"
 - **AC-3.1** `"Acountant"` -> `"Accountant"`.
 - **AC-3.2** `"Software enginer"` -> `"Software engineer"`.
 - **AC-3.3** `"Quantity surveyors"` -> `"Quantity surveyor"`.
-- **AC-3.4** Tokens with similarity below 0.8 do not count as matching (for example `"c#"` vs `"c+"`).
+- **AC-3.4** Tokens with similarity below 0.8 do not count as matching (for example `"c#"` vs `"c+"`). The threshold is configurable with `new TokenDiceScorer(double)`; a value outside [0, 1] or NaN throws `IllegalArgumentException`.
+- **AC-3.5** Token similarity is normalised Levenshtein, 1 - distance / max(length): "kitten" vs "sitting" has distance 3 and similarity 4/7.
 
 ### AC-4 Quality score
 
@@ -123,6 +136,7 @@ String normalisedTitle = n.normalise("Java engineer"); // "Software engineer"
 - **AC-4.3** Titles sharing no matching tokens score `0.0`.
 - **AC-4.4** The score is symmetric: `score(a, b) == score(b, a)`.
 - **AC-4.5** `bestMatch` exposes `q` through `MatchResult.quality()`.
+- **AC-4.6** Tokens are paired one-to-one, best pairs first: "enginer engineer" vs "engineer" scores 2/3, and "engineer engineer" vs "engineer" scores 2/3, never above 1.
 
 ### AC-5 Selection
 
@@ -132,7 +146,7 @@ String normalisedTitle = n.normalise("Java engineer"); // "Software engineer"
 
 ### AC-6 No match *(see open question O-1)*
 
-- **AC-6.1** Given an input with no title scoring above the threshold (for example `"Chef"`), `bestMatch` returns `Optional.empty()`.
+- **AC-6.1** Given an input with no title scoring at or above the threshold (for example `"Chef"`), `bestMatch` returns `Optional.empty()`.
 - **AC-6.2** In the same case, `normalise` returns the trimmed input unchanged (`"Chef"`).
 
 ### AC-7 Invalid input
@@ -160,7 +174,7 @@ String normalisedTitle = n.normalise("Java engineer"); // "Software engineer"
 
 - **NFR-1** No runtime dependencies. Test dependencies: JUnit 5 only.
 - **NFR-2** `Normaliser` is immutable and therefore safe to share between threads.
-- **NFR-3** Runnable with `./mvnw test` and `./mvnw exec:java` (Maven wrapper, no global Maven needed).
+- **NFR-3** Runnable with `./mvnw test` and `./mvnw -q compile exec:java` (Maven wrapper, no global Maven needed).
 - **NFR-4** Every acceptance criterion is covered by at least one test that references its ID.
 
 ## 7. Open questions
