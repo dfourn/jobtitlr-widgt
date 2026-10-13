@@ -6,5 +6,10 @@ public final class Demo {
     }
 
     public static void main(String[] args) {
+        for (String jt : new String[] {"Java engineer", "C# engineer", "Accountant", "Chief Accountant"}) {
+            Normaliser n = new Normaliser();
+            String normalisedTitle = n.normalise(jt);
+            System.out.println(jt + " -> " + normalisedTitle);
+        }
     }
 }
