@@ -12,8 +12,10 @@ import java.util.Set;
  * Matches a free-text job title to the closest title from a configured list
  * of normalised titles (spec 01, section 3).
  *
- * <p>Immutable and therefore safe to share between threads (NFR-2): every
- * field is final and the title list is defensively copied on construction.</p>
+ * <p>Immutable (NFR-2): every field is final and the title list is
+ * defensively copied on construction. An instance is therefore safe to share
+ * between threads whenever its scorer is; the default {@link TokenDiceScorer}
+ * is stateless, so a {@code new Normaliser()} always is.</p>
  */
 public final class Normaliser {
 
@@ -32,7 +34,8 @@ public final class Normaliser {
      * Creates a normaliser with a custom configuration.
      *
      * @param titles the normalised titles to match against
-     * @param scorer the strategy that scores an input against a candidate title
+     * @param scorer the strategy that scores an input against a candidate title;
+     *        it must be thread-safe if this normaliser is shared between threads
      * @param minimumQuality the quality a match must reach to be accepted
      * @throws NullPointerException if titles, scorer or a title element is null
      * @throws IllegalArgumentException if titles is empty, a title element is blank,

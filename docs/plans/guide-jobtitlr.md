@@ -2,7 +2,7 @@
 
 Companion to [`master-plan.md`](master-plan.md). It assumes Dan answered **yes** to D4. If he changed any part of D4, the master plan's answers section wins over this guide.
 
-Sources: `docs/brief/README.md` (B1.x), `docs/specs/01-jobtitlr.md`, `docs/ASSUMPTIONS.md` (A-J*), `docs/research/title-standardisation.md`, and `prompts/claude-code-plan.md` Phases 1 and 2. Line numbers are as of commit `1896117`.
+Sources: `docs/brief/README.md` (B1.x), `docs/specs/01-jobtitlr.md`, `docs/ASSUMPTIONS.md` (A-J*), `docs/research/title-standardisation.md`, and `prompts/claude-code-plan.md` Phases 1 and 2. Line numbers are as of commit `eb24100`.
 
 **What gets marked (B1.7):** good project structure, evidence of good OOP principles, defensive coding, and unit testing. Optimise for those, and for code Dan can explain line by line. No cleverness.
 

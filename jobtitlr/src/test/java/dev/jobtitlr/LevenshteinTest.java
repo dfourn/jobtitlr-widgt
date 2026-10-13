@@ -3,6 +3,7 @@ package dev.jobtitlr;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
@@ -31,6 +32,17 @@ class LevenshteinTest {
     @DisplayName("AC-3.5 acountant vs accountant is 0.9, enginer vs engineer 0.875, surveyors vs surveyor 8/9, c# vs c+ 0.5")
     void workedValues(String id, String a, String b, double similarity) {
         assertEquals(similarity, Levenshtein.similarity(a, b), 1e-9);
+    }
+
+    @Test
+    @DisplayName("AC-3.5 characters outside the Basic Multilingual Plane count as one character each")
+    void supplementaryCharactersCountOnce() {
+        // U+1D538 and U+1D539 are each one code point but two UTF-16 chars.
+        String a = "𝔸bc";
+        String b = "𝔹bc";
+        assertEquals(1, Levenshtein.distance(a, b));
+        assertEquals(2.0 / 3.0, Levenshtein.similarity(a, b), 1e-9);
+        assertEquals(1, Levenshtein.distance("\uD835\uDD38", "x"));
     }
 
     @ParameterizedTest(name = "{0} distance and similarity of {1} and {2} are symmetric")

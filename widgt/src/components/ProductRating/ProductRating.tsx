@@ -28,6 +28,10 @@ export interface ProductRatingProps {
  * from the counts by `summarise` (AC-7.3), which throws a RangeError on
  * invalid counts, fail fast, during render (AC-2.3); the widget does not
  * catch its own error.
+ *
+ * The heading comes first in the DOM, so a screen reader moving by heading
+ * lands before the label and score; CSS `order` keeps the reference's visual
+ * order, with the heading below the score.
  */
 export function ProductRating({
   counts,
@@ -54,11 +58,12 @@ export function ProductRating({
   return (
     <section data-testid="product-rating" aria-labelledby={headingId} className={styles.root}>
       <div className={styles.body}>
+        <BrandLine heading={heading} headingId={headingId} className={styles.brand} />
         {summary.kind === 'rated' ? <RatingLabel label={summary.label} /> : null}
         <StarRow fills={summary.fills} />
         <ScoreText score={summary.score} locale={locale} />
-        <BrandLine heading={heading} headingId={headingId} />
         <RatingBreakdown
+          className={styles.breakdown}
           rows={summary.rows}
           locale={locale}
           selectedRating={pressed}

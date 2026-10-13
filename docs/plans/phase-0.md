@@ -145,11 +145,11 @@ Measured by the planning pass with throwaway scripts (pinned Chromium, DPR 1, th
 ## Implementation notes
 
 Deviations from the plan, made while implementing it:
-- **Step 3**: the ESLint domain guard covers `src/domain/**/*.{ts,tsx}`, not only `.ts`, so a `.tsx` file cannot bring React back in (AC-7.3 test, `d81121e`).
+- **Step 3**: the ESLint domain guard covers `src/domain/**/*.{ts,tsx}`, not only `.ts`, so a `.tsx` file cannot bring React back in (AC-7.3 test, `c8bdad0`).
 - **Step 9, AC-6.3**: the single `<img>` must cover at most 4% of the widget's area (the reference logo is about 1.4% of the card), so the one allowed image cannot be the reference PNG itself.
 - **Step 9, AC-6.3**: the CSS image check is wider than "no `url()` background": no `url()` or `image-set()` on the widget, a descendant or their `::before`/`::after` (background, border image, list marker, generated content), and `feImage` and image inputs are refused too.
 - **Step 6, calibration**: an all-white widget scores 0.114 foreground similarity against the reference card (1.8 points), because the anti-aliased edges of the reference's text are forgiven; recorded in spec 03 §8 rather than fixed.
-- **Review F1 (AC-6.3)**: the anti-cheat checks cover the whole `?visual=1` page, not only the widget, because `widget.screenshot()` captures anything painted in its box: one `<img>` on the page, no picture elements or external `<use>` anywhere, no CSS image URL on any element or pseudo-element (SVG-shape masks and clips and gradient fills allowed), and an opaque, visible, unblended widget and ancestors (`3f2f670`).
+- **Review F1 (AC-6.3)**: the anti-cheat checks cover the whole `?visual=1` page, not only the widget, because `widget.screenshot()` captures anything painted in its box: one `<img>` on the page, no picture elements or external `<use>` anywhere, no CSS image URL on any element or pseudo-element (SVG-shape masks and clips and gradient fills allowed), and an opaque, visible, unblended widget and ancestors (`669d347`).
 - **Review F2 (AC-L8..AC-L10)**: after Vitest the harness clears `axe/`, `screenshots/` and `contract-results.json` in the run folder only (never a path given with `--axe` or `--contract-results`), and visual counts only when the AC-6.3 widget-capture test passed; a detached process started by a unit test remains a documented residual.
 - **Review F3 (AC-L9)**: `--axe runs/axe/` and `./runs/axe` read the same states as `runs/axe`.
 - **Review F4 (AC-L3)**: the lock skips `.DS_Store` and `Thumbs.db`; a root `.gitattributes` keeps text LF and marks PNG and PDF binary (renormalising changed no tracked file).

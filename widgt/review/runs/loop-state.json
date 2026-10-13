@@ -21,7 +21,7 @@
         "passed": 0,
         "total": 58
       },
-      "sha": "e7b6a21",
+      "sha": "e82625b",
       "summary": "baseline",
       "costUsd": null,
       "feedback": {
@@ -118,7 +118,7 @@
         "passed": 58,
         "total": 58
       },
-      "sha": "4f7c49e",
+      "sha": "3958364",
       "summary": "Build the ProductRating widget and demo page: component tree (ProductRating, RatingLabel, StarRow, Star, StarIcon, ScoreText, BrandLine, RatingBreakdown, BreakdownRow), CSS-module tokens, URL-driven demo scenarios, and full unit-test coverage for the uncovered AC IDs.",
       "costUsd": null,
       "feedback": {

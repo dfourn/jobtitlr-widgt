@@ -26,7 +26,7 @@ I (Dan) work with AI in a **plan -> implement** pattern. Every phase follows the
 
 ## Context
 
-- **Brief**: `docs/brief/README.md`, with numbered requirements B1.x (Java) and B2.x (UI), plus the PDF and the reference PNG.
+- **Brief**: `docs/brief/README.md`, with numbered requirements B1.x (Java) and B2.x (UI), plus the reference PNG. (The original PDF was later removed from the repository and its history.)
 - **Specs**: `docs/specs/01-jobtitlr.md`, `02-widgt.md` (the widget) and `03-review-loop.md` (the self-reviewing loop).
 - **Assumptions**: `docs/ASSUMPTIONS.md`. *In a real team I'd confirm these with product. For the assessment I made the sensible call, documented it, and kept it cheap to change.*
 - **ADRs** are in `docs/decisions/`. **Research** is in `docs/research/`.
