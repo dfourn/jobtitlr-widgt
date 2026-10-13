@@ -102,6 +102,7 @@ public final class Normaliser {
      * @return the best match, or empty when no title reaches the minimum quality
      * @throws NullPointerException if jobTitle is null
      * @throws IllegalArgumentException if jobTitle is blank
+     * @throws IllegalStateException if the scorer returns a value outside [0, 1] or NaN
      */
     public Optional<MatchResult> bestMatch(String jobTitle) {
         requireJobTitle(jobTitle);
@@ -109,6 +110,10 @@ public final class Normaliser {
         MatchResult best = null;
         for (String title : titles) {
             double quality = scorer.score(input, title);
+            if (!(quality >= 0.0 && quality <= 1.0)) {
+                throw new IllegalStateException("scorer returned " + quality + " for \"" + input + "\" and \""
+                        + title + "\"; expected a value within [0, 1]");
+            }
             boolean acceptable = quality > 0.0 && quality >= minimumQuality;
             if (acceptable && (best == null || quality > best.quality())) {
                 best = new MatchResult(title, quality);
