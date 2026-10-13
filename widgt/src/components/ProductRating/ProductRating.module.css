@@ -1,6 +1,7 @@
 /*
- * The card. It fills the space the host gives it, up to the reference card's
- * 420px, and centres itself (AC-5.1). `container-type` on the root is what the
+ * The card. It fills the space the host gives it, up to the guide's 420px
+ * maximum (the reference card itself is 360px wide), and centres itself
+ * (AC-5.1). `container-type` on the root is what the
  * descendants' @container rules query (AC-5.3), so the root itself carries no
  * padding: a container rule can only style the container's descendants.
  */
