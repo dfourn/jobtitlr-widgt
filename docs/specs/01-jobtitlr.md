@@ -2,7 +2,7 @@
 
 | | |
 |---|---|
-| Status | **Draft - awaiting review** |
+| Status | **Accepted** |
 | Project | `jobtitlr/` |
 | Language | Java 21, Maven, JUnit 5 |
 | Package | `dev.jobtitlr` |
