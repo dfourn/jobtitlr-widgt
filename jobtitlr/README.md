@@ -110,7 +110,7 @@ Worked examples with the default titles (spec 01, section 4):
 `./mvnw test` (run without `-q`, which hides the counts; the exit code is what judges pass or fail) ends with:
 
 ```text
-Tests run: 108, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 110, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 Each test's `@DisplayName` starts with the acceptance-criterion ID it covers, so a failure names the criterion that broke. What each test class covers, and why it exists:
@@ -124,7 +124,7 @@ Each test's `@DisplayName` starts with the acceptance-criterion ID it covers, so
 | `NormaliserSelectionTest` | 10 | AC-4.5, AC-5.1 to AC-5.3, AC-6.1, AC-6.2, AC-9.1. How the best title is chosen: highest `q` wins, first-listed wins a tie, results are repeatable, the no-match rules, and a custom scorer injected without changing `Normaliser`. |
 | `NormaliserBriefTest` | 6 | AC-1.1 to AC-1.5, AC-5.2. The brief's four examples and its sample code, compiled and run verbatim. |
 | `NormaliserInputTest` | 13 | AC-2.1 to AC-2.3, AC-2.5, AC-3.1 to AC-3.3, AC-7.1 to AC-7.3. Input handling end to end: case, whitespace, punctuation, configured form returned, typo and plural tolerance, and null, blank and punctuation-only inputs. |
-| `NormaliserConfigurationTest` | 18 | AC-8.1 to AC-8.7. Configuration validation: null, empty, blank and duplicate title lists, out-of-range `minimumQuality`, defensive copies, and the guard on an out-of-range scorer result. |
+| `NormaliserConfigurationTest` | 20 | AC-8.1 to AC-8.7. Configuration validation: null, empty, blank and duplicate title lists, out-of-range `minimumQuality`, defensive copies, and the guard on an out-of-range scorer result. |
 | `WorkedExamplesTest` | 8 | AC-4.5, AC-6.1. Every row of spec 01 section 4's worked-examples table, including `Chef` scoring 0.0 against all four default titles. |
 | `DemoTest` | 1 | AC-1.5. `Demo` prints exactly the four expected lines. |
 

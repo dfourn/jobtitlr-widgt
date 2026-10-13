@@ -116,7 +116,7 @@ npm run loop -- --generator claude --max-iter 8 --max-budget-usd 10
 The generator runs `claude -p` with the prompt on stdin and:
 
 - `--output-format json`, to read `total_cost_usd` (also reported on a subscription, where it is notional) and the final message for the scoreboard;
-- `--permission-mode acceptEdits --permission-prompts none`, so edits are accepted and anything outside the allow list is denied instead of hanging;
+- `--permission-mode dontAsk --permission-prompts none`, so anything outside the allow list is denied instead of hanging;
 - `--allowedTools` Read, Glob, Grep, Edit, Write and the project's own `npm test` / `typecheck` / `lint` / `build`;
 - `--disallowedTools` `Edit(review/**)`, `Write(review/**)`, `Read(review/runs/**)`, the package and tool configs, and `Bash(git *)`;
 - `--max-budget-usd` set to what is left of the loop's budget.
