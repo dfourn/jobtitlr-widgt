@@ -52,4 +52,12 @@ class NormaliserConfigurationTest {
                 () -> new Normaliser(Arrays.asList("Architect", title), new TokenDiceScorer(), 0.2));
         assertEquals("titles[1] must not be blank", exception.getMessage());
     }
+
+    @Test
+    @DisplayName("AC-8.4 duplicate titles, ignoring case and surrounding whitespace, throw IllegalArgumentException")
+    void duplicateTitlesThrow() {
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                () -> new Normaliser(Arrays.asList("Architect", " architect "), new TokenDiceScorer(), 0.2));
+        assertEquals("duplicate title: \"architect\"", exception.getMessage());
+    }
 }
