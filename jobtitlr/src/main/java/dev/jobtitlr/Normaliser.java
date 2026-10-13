@@ -30,8 +30,11 @@ public final class Normaliser {
      * @param titles the normalised titles to match against
      * @param scorer the strategy that scores an input against a candidate title
      * @param minimumQuality the quality a match must reach to be accepted
+     * @throws NullPointerException if titles or scorer is null
      */
     public Normaliser(List<String> titles, SimilarityScorer scorer, double minimumQuality) {
+        Objects.requireNonNull(titles, "titles must not be null");
+        Objects.requireNonNull(scorer, "scorer must not be null");
         this.titles = titles;
         this.scorer = scorer;
         this.minimumQuality = minimumQuality;
