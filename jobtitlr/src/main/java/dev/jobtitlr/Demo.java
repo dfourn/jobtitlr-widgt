@@ -6,8 +6,8 @@ public final class Demo {
     }
 
     public static void main(String[] args) {
+        Normaliser n = new Normaliser();
         for (String jt : new String[] {"Java engineer", "C# engineer", "Accountant", "Chief Accountant"}) {
-            Normaliser n = new Normaliser();
             String normalisedTitle = n.normalise(jt);
             System.out.println(jt + " -> " + normalisedTitle);
         }

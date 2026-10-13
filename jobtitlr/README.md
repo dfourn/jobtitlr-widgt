@@ -4,7 +4,7 @@ A Java library that matches a free-text job title to the closest title from a co
 
 ## 1. What it does
 
-`Normaliser` maps a job title such as `Java engineer` to the closest entry in a list of normalised titles — by default the brief's four: `Architect`, `Software engineer`, `Quantity surveyor` and `Accountant`. The list, the similarity scorer and the minimum quality a match must reach are all configurable through the constructors. `normalise` returns the best-matching normalised title, or the stripped input unchanged when nothing matches well enough; `bestMatch` returns an `Optional<MatchResult>` that also carries the quality score, for callers that need to tell a match from a pass-through. Matching ignores case, punctuation and extra whitespace, tolerates typos and plurals token by token, and is deterministic. The library has no runtime dependencies (spec 01, NFR-1), and a constructed `Normaliser` is immutable and safe to share between threads (NFR-2).
+`Normaliser` maps a job title such as `Java engineer` to the closest entry in a list of normalised titles — by default the brief's four: `Architect`, `Software engineer`, `Quantity surveyor` and `Accountant`. The list, the similarity scorer and the minimum quality a match must reach are all configurable through the constructors. `normalise` returns the best-matching normalised title, or the stripped input unchanged when nothing matches well enough; `bestMatch` returns an `Optional<MatchResult>` that also carries the quality score, for callers that need to tell a match from a pass-through. Matching ignores case, punctuation and extra whitespace, tolerates typos and plurals token by token, and is deterministic. The library has no runtime dependencies (spec 01, NFR-1), and a constructed `Normaliser` is immutable, so it is safe to share between threads whenever its scorer is; the default scorer is stateless (NFR-2).
 
 The brief's sample code compiles and runs unchanged:
 
@@ -50,7 +50,7 @@ Six production classes, each with a single responsibility:
 | Class | Responsibility |
 |---|---|
 | `Tokeniser` (package-private) | Splits a title into tokens: lowercases with `Locale.ROOT`, replaces every character that is not a letter, digit, `#` or `+` with a space, and splits on whitespace. |
-| `Levenshtein` (package-private) | The Levenshtein edit distance (two-row dynamic programming) and the normalised similarity `1 - distance / max(len(a), len(b))`. |
+| `Levenshtein` (package-private) | The Levenshtein edit distance (two-row dynamic programming over Unicode code points) and the normalised similarity `1 - distance / max(len(a), len(b))`. |
 | `MatchResult` | A record pairing the matched title with its quality. Its compact constructor validates both components. |
 | `SimilarityScorer` | The strategy interface: `double score(String input, String candidate)`, returning a value within `[0, 1]`. |
 | `TokenDiceScorer` | The default strategy: a Sørensen-Dice score over tokens, weighted by per-token Levenshtein similarity, with a configurable token threshold. |
@@ -60,7 +60,7 @@ Six production classes, each with a single responsibility:
 
 **Why `SimilarityScorer` is a strategy.** `Normaliser` never refers to `TokenDiceScorer` in its logic; it depends only on the `SimilarityScorer` interface, injected through the three-argument constructor. Any implementation — including a lambda, since the interface is a `@FunctionalInterface` — plugs in without changing `Normaliser` (AC-9.1). `Normaliser` guards the value a scorer returns (see the table below), so a scorer that breaks its contract fails fast instead of producing an invalid result.
 
-**Immutability and defensive copies (AC-8.6).** Every `Normaliser` field is `final`. The title list is copied with `List.copyOf` after validation, so changing the caller's list after construction has no effect, and `normalisedTitles()` returns that unmodifiable copy. With no mutable state, one `Normaliser` can be shared between threads (NFR-2).
+**Immutability and defensive copies (AC-8.6).** Every `Normaliser` field is `final`. The title list is copied with `List.copyOf` after validation, so changing the caller's list after construction has no effect, and `normalisedTitles()` returns that unmodifiable copy. With no mutable state of its own, one `Normaliser` can be shared between threads, provided the injected scorer is thread-safe; the default `TokenDiceScorer` holds only its final threshold (NFR-2).
 
 **Fail-fast validation.** Every public constructor and method checks its arguments before doing any work. The Javadoc on each member states the contract; the cases and messages are:
 
@@ -85,7 +85,7 @@ Six production classes, each with a single responsibility:
 Given an input and a candidate title:
 
 1. **Tokenise** both strings: `text.toLowerCase(Locale.ROOT).replaceAll("[^\\p{L}\\p{N}#+]", " ").strip()`. If the result is empty there are no tokens; otherwise split on whitespace. So `"C# Engineer"` becomes `[c#, engineer]` and `"Software-engineer"` becomes `[software, engineer]`.
-2. **Token similarity**: normalised Levenshtein, `1 - distance / max(len(a), len(b))` (two empty strings score 1.0). Two tokens count as matching only when their similarity reaches the token threshold (0.8 by default).
+2. **Token similarity**: normalised Levenshtein over code points, `1 - distance / max(len(a), len(b))` (two empty strings score 1.0). Two tokens count as matching only when their similarity reaches the token threshold (0.8 by default).
 3. **Pair tokens one-to-one, best pairs first**: build every pair whose similarity reaches the threshold, stably sort by similarity descending, then assign greedily so each token is used at most once. The similarities of the assigned pairs are added in that sorted order, so `score(a, b)` and `score(b, a)` add the same doubles in the same sequence and are bit-identical.
 4. **Quality score**: `q = 2 * sum(similarity of matched pairs) / (inputTokenCount + candidateTokenCount)`. If either side has no tokens, `q` is 0.0. `q` is always within `[0, 1]`, is symmetric, and penalises both missing and extra words.
 5. **Select**: score every configured title in order. The highest `q` wins; the best-so-far is replaced only on a strictly greater `q`, so on a tie the title listed first wins.
@@ -110,7 +110,7 @@ Worked examples with the default titles (spec 01, section 4):
 `./mvnw test` (run without `-q`, which hides the counts; the exit code is what judges pass or fail) ends with:
 
 ```text
-Tests run: 110, Failures: 0, Errors: 0, Skipped: 0
+Tests run: 111, Failures: 0, Errors: 0, Skipped: 0
 ```
 
 Each test's `@DisplayName` starts with the acceptance-criterion ID it covers, so a failure names the criterion that broke. What each test class covers, and why it exists:
@@ -118,7 +118,7 @@ Each test's `@DisplayName` starts with the acceptance-criterion ID it covers, so
 | Test class | Tests | Covers |
 |---|---|---|
 | `TokeniserTest` | 9 | AC-2.1 to AC-2.4, AC-7.3. Tokenisation rules: lowercasing with `Locale.ROOT`, whitespace handling, punctuation as separators, `#` and `+` kept inside tokens, and punctuation-only text yielding no tokens. |
-| `LevenshteinTest` | 12 | AC-3.5. The distance and similarity values, including the brief's typo examples and symmetry of the two measures. |
+| `LevenshteinTest` | 13 | AC-3.5. The distance and similarity values, including the brief's typo examples, symmetry of the two measures, and characters outside the Basic Multilingual Plane counting once. |
 | `MatchResultTest` | 10 | AC-9.2. The record's own validation: null and blank titles, quality outside `[0, 1]` or NaN rejected, endpoints 0.0 and 1.0 accepted. |
 | `TokenDiceScorerTest` | 21 | AC-3.1 to AC-3.4, AC-4.1 to AC-4.4, AC-4.6. The score itself: the brief's values, identical and disjoint titles, one-to-one pairing, zero-token safety, symmetry and boundedness over seeded random pairs, and the configurable token threshold. |
 | `NormaliserSelectionTest` | 10 | AC-4.5, AC-5.1 to AC-5.3, AC-6.1, AC-6.2, AC-9.1. How the best title is chosen: highest `q` wins, first-listed wins a tie, results are repeatable, the no-match rules, and a custom scorer injected without changing `Normaliser`. |
