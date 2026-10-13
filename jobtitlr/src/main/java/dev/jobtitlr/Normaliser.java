@@ -58,9 +58,10 @@ public final class Normaliser {
     /**
      * Returns the best-matching normalised title for the given job title.
      *
-     * @param jobTitle the free-text job title; must not be null
+     * @param jobTitle the free-text job title; must be neither null nor blank
      * @return the best title, or the stripped input when there is no match
      * @throws NullPointerException if jobTitle is null
+     * @throws IllegalArgumentException if jobTitle is blank
      */
     public String normalise(String jobTitle) {
         requireJobTitle(jobTitle);
@@ -70,9 +71,10 @@ public final class Normaliser {
     /**
      * Returns the best match together with its quality.
      *
-     * @param jobTitle the free-text job title; must not be null
+     * @param jobTitle the free-text job title; must be neither null nor blank
      * @return the best match, or empty when no title reaches the minimum quality
      * @throws NullPointerException if jobTitle is null
+     * @throws IllegalArgumentException if jobTitle is blank
      */
     public Optional<MatchResult> bestMatch(String jobTitle) {
         requireJobTitle(jobTitle);
@@ -98,9 +100,13 @@ public final class Normaliser {
     }
 
     /**
-     * Fails fast on a null job title with the message the spec requires.
+     * Fails fast on a null or blank job title with the messages the spec
+     * requires.
      */
     private static void requireJobTitle(String jobTitle) {
         Objects.requireNonNull(jobTitle, "jobTitle must not be null");
+        if (jobTitle.isBlank()) {
+            throw new IllegalArgumentException("jobTitle must not be blank");
+        }
     }
 }
