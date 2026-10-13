@@ -1,6 +1,6 @@
 # Build guide: the product rating widget (Phase 3)
 
-Companion to [`master-plan.md`](master-plan.md). It is written for the **generator** (the agent that writes the widget in each loop iteration) and for the people and agents who review it. Paths are relative to `widgt/` unless they start with `docs/`. Line numbers are as of commit `1896117`.
+Companion to [`master-plan.md`](master-plan.md). It is written for the **generator** (the agent that writes the widget in each loop iteration) and for the people and agents who review it. Paths are relative to `widgt/` unless they start with `docs/`. Line numbers are as of commit `eb24100`.
 
 **What gets marked (B2.17):** *how* it is built: component design, TypeScript modelling, responsiveness, accessibility, tests and maintainability. Pixels matter less. The code must be explainable line by line, so prefer plain, obvious code over clever code.
 

@@ -45,7 +45,7 @@ The deliverables are `jobtitlr/` and `widgt/src/`. The folders `docs/plans/`, `d
 
 Comments and test names cite IDs from the documents below: `B1.x`/`B2.x` are brief items, `AC-x.y` and `NFR-x` are acceptance criteria and non-functional requirements in the specs, and `A-Jx`/`A-Wx` are assumptions.
 
-- [`docs/brief/`](docs/brief/) — the assessment brief, transcribed from the PDF with item IDs (`B1.x`, `B2.x`) so specs and tests can cite it.
+- [`docs/brief/`](docs/brief/) — the assessment brief, summarised from Feefo's PDF (not redistributed here) with item IDs (`B1.x`, `B2.x`) so specs and tests can cite it.
 - Specs: [`01-jobtitlr.md`](docs/specs/01-jobtitlr.md) (public API, algorithm and acceptance criteria for the normaliser), [`02-widgt.md`](docs/specs/02-widgt.md) (the widget) and [`03-review-loop.md`](docs/specs/03-review-loop.md) (the self-reviewing loop that built it).
 - Decisions: [`docs/decisions/`](docs/decisions/) — ADR 0001 (widgt styling approach), ADR 0002 (jobtitlr matching algorithm) and ADR 0004 (the self-reviewing loop). Number 0003 was reserved for the optional job-title standardiser extension, which was not built.
 - Plans: [`docs/plans/`](docs/plans/) — the master plan and the per-phase plans and guides the work followed.

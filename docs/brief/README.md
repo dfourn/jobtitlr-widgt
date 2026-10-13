@@ -1,6 +1,6 @@
 # Brief: Feefo Software Engineering Full-stack Technical Assessment 2026
 
-Original: `feefo-assessment-2026.pdf`. The design image extracted from it is `widget-reference.png` (401x443 px).
+Feefo supplied the original brief as a PDF. It is not redistributed in this repository; the requirements below are summarised from it. The design image extracted from it is `widget-reference.png` (401x443 px).
 Below is a transcription of the key requirements, so specs and tests can refer to them by ID.
 
 ## General

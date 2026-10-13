@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Status | **Approved** (2026-10-12): Dan accepted all ten decisions in §1. Waiting for H0 (the relock) |
-| Written | 2026-10-12 by Claude Code (Claude Opus), from three read-only research subagents (Java, widget, harness and process) over the repository at `1896117`, then checked by an independent reviewer subagent (3 blockers, 9 major and 23 minor findings, all applied) |
+| Written | 2026-10-12 by Claude Code (Claude Opus), from three read-only research subagents (Java, widget, harness and process) over the repository at `eb24100`, then checked by an independent reviewer subagent (3 blockers, 9 major and 23 minor findings, all applied) |
 | Supersedes | The phase order and per-phase steps of `prompts/claude-code-plan.md`. Its **Rules** section still applies, with the changes in §3 |
 | Companion guides | [`guide-jobtitlr.md`](guide-jobtitlr.md) (Phases 1 and 2) and [`guide-widgt.md`](guide-widgt.md) (Phase 3) |
 
@@ -135,7 +135,7 @@ After each subagent returns, the orchestrator **checks its claims itself**: `git
 
 ## 5. Phase 0 close-out (`chore/phase-0`)
 
-Prerequisite: **H0 is done**. `git log -1 --format=%h -- widgt/review/contract.lock` prints something other than `7ea49d1` (the old lock).
+Prerequisite: **H0 is done**. `git log -1 --format=%h -- widgt/review/contract.lock` prints something other than `c276a9e` (the old lock).
 
 1. In `widgt/`, in the background: `npm run verify; echo "exit=$?"`. It must exit 0, with all six gates passing. Contract tests are still red (0/58); that is expected, because `verify` checks gates, not contract results.
 2. If it exits non-zero: stop and show Dan the gate lines from `review/runs/latest/report.md`.

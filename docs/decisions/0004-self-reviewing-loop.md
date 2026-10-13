@@ -46,8 +46,8 @@ Phase 3 built the widget's components through a loop: an AI generator edits `wid
 ## How the history fits TDD
 The 58 contract tests were written from spec 02 before any component existed, then locked: they are the acceptance-level red (spec 03 §6). The loop's iterations are the matching green, one commit each, and the loop never amends, rebases or force-pushes (`widgt/review/README.md`).
 
-- **iter-00**, the baseline (`e7b6a21`): 12.4/100 with every gate passing and the contract honestly red at 0/58 — no widget existed, and the top failures were all `getByTestId('product-rating')` not visible (`widgt/review/runs/loop-state.json`).
-- **iter-01** (`4f7c49e`), one external generator iteration later: 95.8/100, contract green at 58/58, unit, a11y and responsive all 100, visual 64.2. The loop then stopped on its target: score >= 90 with all gates passing (`widgt/review/src/loop/stop.ts:38-39`).
+- **iter-00**, the baseline (`e82625b`): 12.4/100 with every gate passing and the contract honestly red at 0/58 — no widget existed, and the top failures were all `getByTestId('product-rating')` not visible (`widgt/review/runs/loop-state.json`).
+- **iter-01** (`3958364`), one external generator iteration later: 95.8/100, contract green at 58/58, unit, a11y and responsive all 100, visual 64.2. The loop then stopped on its target: score >= 90 with all gates passing (`widgt/review/src/loop/stop.ts:38-39`).
 - Loop commits are written by the harness, not by GLM: `loop(iter-NN): score X -> Y (+Z), a11y N, contract P/Q`, the generator's one-line summary, and a `Generator:` trailer instead of the usual `Assisted-by:` line (`widgt/review/src/loop/runner.ts:191-204`; master plan D3).
 
 ## Consequences

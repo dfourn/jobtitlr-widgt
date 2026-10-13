@@ -1,6 +1,6 @@
 # Testing and verification report
 
-Final verification of the submission against the brief, run on 13 October 2026 in a fresh clone of the repository (commit `1073b10`, branch `chore/final-verification`) by an agent that had seen none of the development work. Every number and quoted line in sections 2 and 3 was produced by the commands below in that clone; nothing was copied from the project's own documentation.
+Final verification of the submission against the brief, run on 13 October 2026 in a fresh clone of the repository (commit `dd6c5ae`, branch `chore/final-verification`) by an agent that had seen none of the development work. Every number and quoted line in sections 2 and 3 was produced by the commands below in that clone; nothing was copied from the project's own documentation.
 
 Environment: macOS 26.3, Temurin OpenJDK 21 (build 21+35-LTS, the default `java` on `PATH`), Node v22.23.1, npm 10.9.8.
 
@@ -45,7 +45,7 @@ Unit and component tests (vitest, Testing Library) in `widgt/src/`; contract tes
 | B2.13 Vitest or Jest with Testing Library, or equivalent | 02/AC-8.1 | This run: `npm test` inside `npm run verify` — 472 tests in 39 files, all passing (section 2) |
 | B2.14 Extra libraries allowed, but be ready to explain why | Dependency set is minimal and each is justified | `widgt/package.json` (React, Vite, Vitest, Testing Library, Playwright, axe-core, pixelmatch, fontsource Poppins); reasoning in `widgt/README.md` and ADR 0001 |
 | B2.15 Must run locally by following the README | 02/AC-8.1 (`npm ci`, `dev`, `test`, `test:e2e`, `verify` all work) | This run: every README command exit 0, and the dev server answered HTTP 200 (section 2) |
-| B2.16 Share it in the GitHub repository | Delivery step, outside the code | Repository at commit `1073b10` on `chore/final-verification`; publication is Dan's action (master plan H6), not verifiable in the clone |
+| B2.16 Share it in the GitHub repository | Delivery step, outside the code | Repository at commit `dd6c5ae` on `chore/final-verification`; publication is Dan's action (master plan H6), not verifiable in the clone |
 | B2.17 The approach is marked, not pixel-matching | 03 in full: the harness scores the brief's own signals, with pixels at weight 10/100 and never a gate | The loop harness's own tests (table below) and the recorded run: total 95.8/100 with the visual signal at 64.2 while every gate and every contract test passes |
 
 ### The review loop harness (spec 03)
@@ -184,7 +184,7 @@ Do not run two Playwright-based commands concurrently (`npm run verify` and `npm
 
 After `v1.0.0` a review of the submission led to small fixes on `fix/post-review` (see [`AI-USAGE.md`](AI-USAGE.md)): Levenshtein over code points with one new test, the tokeniser's patterns compiled once, the thread-safety contract tied to the scorer, `Demo` reusing one `Normaliser`, and the widget's heading moved first in the DOM with one new test. Sections 1 to 3 above describe the `v1.0.0` run; the reproduce block in section 3 carries the new counts.
 
-The branch tip (`61765e0` plus documentation-only commits) was re-verified in a fresh clone on 13 October 2026, same environment:
+The branch tip (`a64c7df` plus documentation-only commits) was re-verified in a fresh clone on 13 October 2026, same environment:
 
 | Command | Exit | Result |
 |---|---|---|
@@ -194,4 +194,6 @@ The branch tip (`61765e0` plus documentation-only commits) was re-verified in a 
 | `npm run test:e2e` | 0 | 58 passed |
 
 The review total and visual signal are identical to `v1.0.0`: the heading reorder changes the DOM, not the pixels.
+
+After this run the brief PDF was removed from the entire history with `git filter-repo`. Every commit hash changed, including those in sections 1 to 3, which have been remapped to the rewritten commits; the trees are otherwise identical.
 
