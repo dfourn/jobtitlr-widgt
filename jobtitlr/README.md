@@ -128,7 +128,7 @@ Each test's `@DisplayName` starts with the acceptance-criterion ID it covers, so
 | `WorkedExamplesTest` | 8 | AC-4.5, AC-6.1. Every row of spec 01 section 4's worked-examples table, including `Chef` scoring 0.0 against all four default titles. |
 | `DemoTest` | 1 | AC-1.5. `Demo` prints exactly the four expected lines. |
 
-Phase 5 of the project plan will collect the final cross-part test numbers in `docs/TESTING.md`.
+The final cross-part test numbers and the brief-to-test traceability are in [`docs/TESTING.md`](../docs/TESTING.md), produced by a verification run in a fresh clone.
 
 **What is not tested.** Two known gaps are carried as documentation rather than fixed:
 
