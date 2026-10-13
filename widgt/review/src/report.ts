@@ -1,5 +1,5 @@
 import type { ScoreResult, SignalScore } from './score';
-import type { Failure, GateResult, SignalKey } from './types';
+import type { Failure, GateResult, RegionDiagnostic, SignalKey } from './types';
 import { SIGNAL_KEYS } from './types';
 
 /** Human labels for the signals, in report order. */
@@ -46,6 +46,11 @@ export interface ReviewReport {
   readonly contract: { readonly passed: number; readonly total: number } | null;
   /** Judge criterion medians (0-3). Scores only: the judge's prose stays out of reports. */
   readonly judgeScores: Readonly<Record<string, number>> | null;
+  /**
+   * Visual region diagnostics (AC-L10, not scored), or `null` when the widget
+   * did not render or the images could not be compared.
+   */
+  readonly visualRegions: readonly RegionDiagnostic[] | null;
   /** Every failure, ranked. The markdown and the prompt show the top 10. */
   readonly failures: readonly Failure[];
   readonly notes: readonly string[];
@@ -127,6 +132,19 @@ export function renderReportMarkdown(report: ReviewReport): string {
     lines.push(`**Missing signals** (scored 0): ${report.missing.map((key) => SIGNAL_LABELS[key]).join(', ')}`, '');
   }
 
+  if (report.visualRegions !== null) {
+    lines.push(
+      '## Visual regions (diagnostics, not scored)',
+      '',
+      '| Region | Similarity | Best offset (px) | Similarity there |',
+      '|---|---:|---|---:|',
+      ...report.visualRegions.map((region) =>
+        row([region.name, region.similarity.toFixed(3), formatOffset(region.best), region.best.similarity.toFixed(3)]),
+      ),
+      '',
+    );
+  }
+
   if (report.judgeScores !== null) {
     lines.push('## Judge rubric (median of samples, 0-3)', '', '| Criterion | Score |', '|---|---:|');
     for (const [criterion, value] of Object.entries(report.judgeScores)) {
@@ -161,6 +179,12 @@ export function renderReportMarkdown(report: ReviewReport): string {
 /** Formats a score: whole numbers without decimals, others to one place. */
 export function formatScore(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+/** An offset in px as `(0, +4)` or `(-3, 0)`. */
+export function formatOffset(offset: { readonly dx: number; readonly dy: number }): string {
+  const signedPx = (value: number): string => (value > 0 ? `+${String(value)}` : String(value));
+  return `(${signedPx(offset.dx)}, ${signedPx(offset.dy)})`;
 }
 
 /** Zero-pads an iteration number to two digits. */

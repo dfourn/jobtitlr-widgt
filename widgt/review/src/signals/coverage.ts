@@ -1,4 +1,5 @@
 import type { ReadonlyFs } from '../io/fs';
+import type { UnitResults } from './unit';
 
 /**
  * The AC sub-IDs of spec 02 (`**AC-4.3**`), limited to the given groups
@@ -17,53 +18,68 @@ export function parseSpecAcIds(spec: string, groups: readonly number[] = [1, 2, 
   });
 }
 
-const STRING_LITERAL = /'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*"|`(?:[^`\\]|\\.)*`/g;
+/** Spec 02 groups whose criteria unit and component tests can check (AC-L11). */
+export const UNIT_TESTABLE_GROUPS = [1, 2, 3, 4] as const;
 
 /**
- * AC IDs cited by test titles in a test file. Test names start with their AC
- * ID (spec 02 §6), so every string literal that starts with `AC-x.y` counts,
- * and every ID inside it (`'AC-4.2 AC-4.3 toggles'` cites both). Comments are
- * stripped first so a commented-out test does not count.
+ * IDs in those groups that jsdom cannot check, so a unit test citing them
+ * would only be citing them for coverage. The contract tests check them.
  */
-export function citedAcIds(source: string): Set<string> {
-  const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
-  const ids = new Set<string>();
-  for (const literal of withoutComments.match(STRING_LITERAL) ?? []) {
-    const body = literal.slice(1, -1);
-    if (!/^\s*AC-\d+\.\d+/.test(body)) continue;
-    for (const id of body.match(/AC-\d+\.\d+/g) ?? []) ids.add(id);
-  }
-  return ids;
+export const UNIT_EXCLUDED_AC_IDS: Readonly<Record<string, string>> = {
+  'AC-3.6': 'axe at WCAG 2.2 AA needs a real browser rendering',
+  'AC-3.7': 'focus visibility and its contrast need computed styles',
+  'AC-4.7': 'visual distinctness needs computed CSS, which jsdom lacks with CSS Modules',
+};
+
+/** The spec 02 IDs unit and component tests can check: groups 1-4 minus the exclusions (AC-L11). */
+export function unitTestableAcIds(spec: string): string[] {
+  return parseSpecAcIds(spec, UNIT_TESTABLE_GROUPS).filter((id) => !(id in UNIT_EXCLUDED_AC_IDS));
+}
+
+/**
+ * AC IDs cited by one test or describe title. Test names start with the AC ID
+ * they check (spec 02 §6), so a title cites only the ID it starts with
+ * (`'AC-4.2 AC-4.3 toggles'` cites AC-4.2), and listing more IDs earns no more
+ * coverage; a title that only mentions an ID later (`'renders (see AC-1.1)'`)
+ * cites none. Returns at most one ID.
+ */
+export function titleAcIds(title: string): string[] {
+  const first = /^\s*(AC-\d+\.\d+)\b/.exec(title)?.[1];
+  return first === undefined ? [] : [first];
 }
 
 export interface AcCoverage {
-  /** 0-100, or `null` when the spec could not be read. */
+  /** 0-100, or `null` when the spec or the unit results could not be read. */
   readonly value: number | null;
   readonly required: readonly string[];
   readonly cited: readonly string[];
   readonly detail: string;
 }
 
-const TEST_FILE = /\.(?:test|spec)\.[cm]?[jt]sx?$/;
-
-/** Share of spec 02's AC-1..7 sub-IDs cited by at least one test under `testDirs`. */
-export function acCoverage(fs: ReadonlyFs, specPath: string, testDirs: readonly string[] = ['src']): AcCoverage {
+/**
+ * Share of spec 02's unit-testable IDs cited by at least one **passing** unit
+ * test (AC-L11). Citations come from the Vitest results, not the source, so a
+ * failing test earns nothing. A test cites the first ID of its own title and
+ * of each of its describe titles ({@link titleAcIds}).
+ */
+export function acCoverage(fs: ReadonlyFs, specPath: string, results: UnitResults | null): AcCoverage {
   if (!fs.exists(specPath)) {
     return { value: null, required: [], cited: [], detail: `spec not found: ${specPath}` };
   }
-  const required = parseSpecAcIds(fs.readText(specPath));
-  const found = new Set<string>();
-  for (const file of testDirs.flatMap((dir) => fs.listFiles(dir)).filter((f) => TEST_FILE.test(f))) {
-    for (const id of citedAcIds(fs.readText(file))) found.add(id);
-  }
-  const cited = required.filter((id) => found.has(id));
+  const required = unitTestableAcIds(fs.readText(specPath));
   if (required.length === 0) {
-    return { value: null, required, cited, detail: `no AC IDs found in ${specPath}` };
+    return { value: null, required, cited: [], detail: `no AC IDs found in ${specPath}` };
   }
+  if (results === null) {
+    return { value: null, required, cited: [], detail: 'AC coverage unknown: unit test results not found' };
+  }
+  const found = new Set(results.tests.filter((t) => t.passed).flatMap((t) => t.titlePath.flatMap(titleAcIds)));
+  const cited = required.filter((id) => found.has(id));
+  const share = (cited.length / required.length) * 100;
   return {
-    value: (cited.length / required.length) * 100,
+    value: share,
     required,
     cited,
-    detail: `AC coverage ${String(Math.round((cited.length / required.length) * 100))}% (${String(cited.length)}/${String(required.length)})`,
+    detail: `AC coverage ${String(Math.round(share))}% (${String(cited.length)}/${String(required.length)})`,
   };
 }

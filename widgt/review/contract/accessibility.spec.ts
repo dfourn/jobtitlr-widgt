@@ -14,6 +14,8 @@ import {
   rowButton,
   rowNamePattern,
   tabIntoWidget,
+  writeAxeState,
+  type AxeState,
 } from './helpers';
 
 const WCAG_22_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'];
@@ -24,8 +26,13 @@ const WCAG_22_AA_TAGS = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'];
  */
 type AxePage = ConstructorParameters<typeof AxeBuilder>[0]['page'];
 
-async function axeViolations(page: Page): Promise<string[]> {
+/**
+ * Runs axe at WCAG 2.2 AA, records the result for `state` (`<RUN_DIR>/axe/<state>.json`, read by
+ * the harness's accessibility signal), and returns one readable line per violation.
+ */
+async function axeViolations(page: Page, state: AxeState): Promise<string[]> {
   const results = await new AxeBuilder({ page: page as unknown as AxePage }).withTags(WCAG_22_AA_TAGS).analyze();
+  writeAxeState(state, results.violations);
   return results.violations.map(
     (violation) =>
       `${violation.id} (${violation.impact ?? 'unknown'}): ${violation.help} -> ${violation.nodes
@@ -147,13 +154,13 @@ test.describe('AC-3 accessibility', () => {
   test('AC-3.6 axe reports 0 WCAG 2.2 AA violations in the default state', async ({ page }) => {
     await openScenario(page, URLS.interactive);
 
-    expect(await axeViolations(page)).toEqual([]);
+    expect(await axeViolations(page, 'default')).toEqual([]);
   });
 
   test('AC-3.6 axe reports 0 WCAG 2.2 AA violations in the static state', async ({ page }) => {
     await openScenario(page, URLS.static);
 
-    expect(await axeViolations(page)).toEqual([]);
+    expect(await axeViolations(page, 'static')).toEqual([]);
   });
 
   test('AC-3.6 axe reports 0 WCAG 2.2 AA violations with a row selected', async ({ page }) => {
@@ -162,7 +169,7 @@ test.describe('AC-3 accessibility', () => {
     await row.click();
     await expect(row).toHaveAttribute('aria-pressed', 'true');
 
-    expect(await axeViolations(page)).toEqual([]);
+    expect(await axeViolations(page, 'selected')).toEqual([]);
   });
 
   test('AC-3.7 a keyboard-focused row has a visible focus indicator with at least 3:1 contrast', async ({

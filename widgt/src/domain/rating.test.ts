@@ -175,6 +175,15 @@ describe('validateCounts', () => {
     expect(() => validateCounts(parsed)).toThrow(/1 star\b.*missing/);
   });
 
+  it.each<[string]>([['0'], ['6'], ['total']])(
+    'AC-2.3 throws a RangeError naming the unknown key "%s"',
+    (key) => {
+      const counts: unknown = { ...REFERENCE, [key]: 1 };
+      expect(() => validateCounts(counts)).toThrow(RangeError);
+      expect(() => validateCounts(counts)).toThrow(`"${key}"`);
+    },
+  );
+
   it.each<[string, unknown]>([
     ['null', null],
     ['undefined', undefined],

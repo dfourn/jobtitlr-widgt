@@ -1,6 +1,6 @@
-import { formatScore, pad2, rankFailures, TOP_FAILURES } from '../report';
+import { formatOffset, formatScore, pad2, rankFailures, TOP_FAILURES } from '../report';
 import type { GateReport, ReviewReport } from '../report';
-import type { Failure } from '../types';
+import { REGION_SEARCH, type Failure, type RegionDiagnostic } from '../types';
 
 /**
  * Everything the generator may see (spec 03 §5). There is deliberately no
@@ -14,6 +14,8 @@ export interface PromptInput {
   readonly lastTotal: number | null;
   readonly failedGates: readonly GateReport[];
   readonly failures: readonly Failure[];
+  /** Visual region diagnostics of the last review; `null` when the widget did not render. */
+  readonly visualRegions: readonly RegionDiagnostic[] | null;
 }
 
 /** Picks the allowed fields from a report. Anything else in the report is dropped. */
@@ -24,7 +26,29 @@ export function promptInputFromReport(report: ReviewReport | null, spec: string,
     lastTotal: report?.total ?? null,
     failedGates: report?.gates.filter((gate) => !gate.passed) ?? [],
     failures: report === null ? [] : rankFailures(report.failures).slice(0, TOP_FAILURES),
+    visualRegions: report?.visualRegions ?? null,
   };
+}
+
+/**
+ * One line naming the weakest visual region and the offset where it matches
+ * best (AC-L10). It says where the widget differs, not how to fix it.
+ * `null` without diagnostics.
+ */
+export function visualHint(regions: readonly RegionDiagnostic[] | null): string | null {
+  let weakest: RegionDiagnostic | null = null;
+  for (const region of regions ?? []) {
+    if (weakest === null || region.similarity < weakest.similarity) weakest = region;
+  }
+  if (weakest === null) return null;
+  const head = `Visual: the weakest region is '${weakest.name}' (${weakest.similarity.toFixed(2)})`;
+  const { dx, dy, similarity } = weakest.best;
+  if (dx === 0 && dy === 0) return `${head}; no offset within ${String(REGION_SEARCH)} px matches it better.`;
+  const where = [
+    dx === 0 ? '' : `${String(Math.abs(dx))} px to the ${dx > 0 ? 'right' : 'left'}`,
+    dy === 0 ? '' : `${String(Math.abs(dy))} px ${dy > 0 ? 'lower' : 'higher'}`,
+  ].filter((part) => part !== '');
+  return `${head}; it matches the reference best at an offset of ${formatOffset(weakest.best)} px (${similarity.toFixed(2)}), i.e. ${where.join(' and ')}.`;
 }
 
 /** Builds the generator prompt for one iteration. Pure. */
@@ -47,6 +71,8 @@ export function buildPrompt(input: PromptInput): string {
         `${failure.file === null ? '' : ` (${failure.file})`}: ${oneLine(failure.message).slice(0, 300)}`,
     );
 
+  const hint = visualHint(input.visualRegions);
+
   return [
     `# widgt: iteration ${pad2(input.iteration)}`,
     '',
@@ -65,6 +91,7 @@ export function buildPrompt(input: PromptInput): string {
     '## Current state',
     '',
     state,
+    ...(hint === null ? [] : ['', hint]),
     '',
     '## Failed gates',
     '',

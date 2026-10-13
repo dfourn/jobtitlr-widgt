@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import type { ForbiddenFile } from './guard';
 import type { ReadonlyFs } from './io/fs';
 import type { CommandRunner } from './io/runner';
 import type { GateId, GateResult } from './types';
@@ -12,23 +13,51 @@ export interface LockScope {
 }
 
 /**
- * Spec 03 G4 scope. `review/playwright.config.ts` is added to the spec's list
- * because it decides which contract tests run: editing its `grep` or
- * `testIgnore` would skip tests without touching a spec file.
+ * Spec 03 G4 scope: everything that decides what the review measures.
+ * - `review/contract`, `review/reference` and `review/rubric.json`: the tests,
+ *   the target image and the weights.
+ * - `review/playwright.config.ts`: its `grep` or `testIgnore` could skip
+ *   contract tests without touching a spec file.
+ * - `review/src`: the gates and signals themselves, snapshots included.
+ * - The ESLint, TypeScript and Vite configs: G1, G2 and the unit tests run
+ *   under them, so loosening one would hide failures.
+ * - `package.json` and `package-lock.json`: they define the scripts the gates
+ *   run and the tool versions.
+ * There are no globs, so each file is listed.
  */
 export const DEFAULT_LOCK_SCOPE: LockScope = {
-  dirs: ['review/contract', 'review/reference'],
-  files: ['review/rubric.json', 'review/playwright.config.ts'],
+  dirs: ['review/contract', 'review/reference', 'review/src'],
+  files: [
+    'review/rubric.json',
+    'review/playwright.config.ts',
+    'review/tsconfig.json',
+    'eslint.config.js',
+    'tsconfig.json',
+    'tsconfig.app.json',
+    'tsconfig.node.json',
+    'vite.config.ts',
+    'package.json',
+    'package-lock.json',
+  ],
 };
 
 export const DEFAULT_LOCK_FILE = 'review/contract.lock';
 
+/**
+ * File names operating systems drop into folders on their own (macOS Finder, Windows Explorer).
+ * They are never tracked, so hashing them would fail G4 on one machine and not another. Exactly
+ * these names are skipped; any other file in a locked folder, dotfiles included, is locked.
+ */
+export const OS_JUNK_FILES: readonly string[] = ['.DS_Store', 'Thumbs.db'];
+
+const isOsJunk = (path: string): boolean => OS_JUNK_FILES.includes(path.slice(path.lastIndexOf('/') + 1));
+
 /** A lock: POSIX path -> sha256 hex digest, with keys sorted. */
 export type ContractLock = Readonly<Record<string, string>>;
 
-/** Hashes every file in `scope` (sorted by path). Pure apart from reading `fs`. */
+/** Hashes every file in `scope` but OS junk ({@link OS_JUNK_FILES}), sorted by path. Pure apart from reading `fs`. */
 export function computeLock(fs: ReadonlyFs, scope: LockScope = DEFAULT_LOCK_SCOPE): ContractLock {
-  const paths = new Set<string>(scope.dirs.flatMap((dir) => fs.listFiles(dir)));
+  const paths = new Set<string>(scope.dirs.flatMap((dir) => fs.listFiles(dir)).filter((path) => !isOsJunk(path)));
   for (const file of scope.files) {
     if (fs.exists(file)) paths.add(file);
   }
@@ -105,6 +134,33 @@ function diffLocks(expected: ContractLock, actual: ContractLock): LockDiff {
     added: actualPaths.filter((path) => !(path in expected)),
     removed: expectedPaths.filter((path) => !(path in actual)),
   };
+}
+
+/**
+ * Files in the lock scope that changed, appeared or disappeared since `before`, a lock computed
+ * at the start of the same review (AC-L3). The comparison is in memory, not with
+ * `review/contract.lock`, because a unit test could rewrite the lock along with the files.
+ */
+export function lockChangesSince(fs: ReadonlyFs, before: ContractLock, scope: LockScope = DEFAULT_LOCK_SCOPE): string[] {
+  const diff = diffLocks(before, computeLock(fs, scope));
+  return [...diff.changed, ...diff.added, ...diff.removed].sort();
+}
+
+/**
+ * G4 with the files that would change how the tools run (AC-L12, `review/src/guard.ts`): the gate
+ * fails when there are any.
+ */
+export function withForbiddenFiles(gate: GateResult, forbidden: readonly ForbiddenFile[]): GateResult {
+  if (forbidden.length === 0) return gate;
+  const note = `files that would change how the tools run (AC-L12): ${forbidden.map((file) => file.name).join(', ')}`;
+  return { ...gate, passed: false, detail: gate.passed ? note : `${gate.detail}; ${note}` };
+}
+
+/** G4 with the files that changed during the review: the gate fails when there are any. */
+export function withChangesDuringReview(gate: GateResult, changed: readonly string[]): GateResult {
+  if (changed.length === 0) return gate;
+  const note = `locked files changed during the review: ${changed.join(', ')}`;
+  return { ...gate, passed: false, detail: gate.passed ? note : `${gate.detail}; ${note}` };
 }
 
 /** A forbidden pattern for G5. */

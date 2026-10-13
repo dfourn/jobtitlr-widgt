@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
+import { RUN_DIR } from './contract/helpers';
 
 /**
  * Playwright config for the locked widgt contract (spec 02 section 6, spec 03 section 6).
@@ -8,19 +9,20 @@ import { defineConfig, devices } from '@playwright/test';
  * against what would ship rather than the dev server. Rendering is pinned (Chromium only,
  * reduced motion, en-GB, Europe/London, device scale factor 1) so screenshots and layout
  * measurements are repeatable between runs.
+ *
+ * Every output goes under `RUN_DIR`: `REVIEW_RUN_DIR` when set, else `review/runs/latest/`.
  */
 const appDir = fileURLToPath(new URL('..', import.meta.url));
-const latestRunDir = fileURLToPath(new URL('./runs/latest/', import.meta.url));
 const port = 4173;
 const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: './contract',
-  outputDir: `${latestRunDir}test-results`,
+  outputDir: `${RUN_DIR}test-results`,
   fullyParallel: true,
   forbidOnly: true,
   retries: 0,
-  reporter: [['list'], ['json', { outputFile: `${latestRunDir}contract-results.json` }]],
+  reporter: [['list'], ['json', { outputFile: `${RUN_DIR}contract-results.json` }]],
   use: {
     baseURL,
     // Not a first-class fixture option, so it goes through the context options.

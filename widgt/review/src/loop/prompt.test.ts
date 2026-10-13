@@ -65,3 +65,35 @@ describe('AC-L7 generator prompt', () => {
     expect(prompt).toContain('Never skip or delete tests');
   });
 });
+
+describe('AC-L10 visual hint in the generator prompt', () => {
+  const regions = [
+    { name: 'label', similarity: 0.66, best: { dx: 0, dy: 4, similarity: 1 } },
+    { name: 'stars', similarity: 0.412, best: { dx: 0, dy: 4, similarity: 0.97 } },
+    { name: 'rows', similarity: 0.5, best: { dx: -3, dy: 2, similarity: 0.9 } },
+  ];
+  const promptWith = (visualRegions: ReviewReport['visualRegions']): string =>
+    buildPrompt(promptInputFromReport({ ...sampleReport, visualRegions }, spec, 4));
+
+  it('AC-L10 names the weakest region and where it matches best, in one line', () => {
+    const prompt = promptWith(regions);
+    expect(prompt).toContain(
+      "Visual: the weakest region is 'stars' (0.41); it matches the reference best at an offset of (0, +4) px (0.97), i.e. 4 px lower.",
+    );
+    expect(prompt.split('\n').filter((line) => line.startsWith('Visual:'))).toHaveLength(1);
+  });
+
+  it('AC-L10 describes horizontal and vertical offsets', () => {
+    const prompt = promptWith([{ name: 'rows', similarity: 0.5, best: { dx: -3, dy: -2, similarity: 0.9 } }]);
+    expect(prompt).toContain('at an offset of (-3, -2) px (0.90), i.e. 3 px to the left and 2 px higher.');
+  });
+
+  it('AC-L10 says when no offset fits the weakest region better', () => {
+    const prompt = promptWith([{ name: 'score', similarity: 0.3, best: { dx: 0, dy: 0, similarity: 0.3 } }]);
+    expect(prompt).toContain("Visual: the weakest region is 'score' (0.30); no offset within 8 px matches it better.");
+  });
+
+  it('AC-L10 leaves the line out when the widget is absent', () => {
+    expect(promptWith(null)).not.toContain('Visual:');
+  });
+});

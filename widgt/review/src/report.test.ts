@@ -50,6 +50,31 @@ describe('AC-L1 renderReportMarkdown()', () => {
   });
 });
 
+describe('AC-L10 visual region diagnostics in report.md', () => {
+  const regions = [
+    { name: 'label', similarity: 0.6642, best: { dx: 0, dy: 4, similarity: 1 } },
+    { name: 'rows', similarity: 0.4449, best: { dx: -3, dy: 0, similarity: 0.9 } },
+  ];
+
+  it('AC-L10 shows each region with its similarity and best offset', () => {
+    const markdown = renderReportMarkdown({ ...sampleReport, visualRegions: regions });
+    expect(markdown).toContain(
+      [
+        '## Visual regions (diagnostics, not scored)',
+        '',
+        '| Region | Similarity | Best offset (px) | Similarity there |',
+        '|---|---:|---|---:|',
+        '| label | 0.664 | (0, +4) | 1.000 |',
+        '| rows | 0.445 | (-3, 0) | 0.900 |',
+      ].join('\n'),
+    );
+  });
+
+  it('AC-L10 leaves the section out without diagnostics', () => {
+    expect(renderReportMarkdown({ ...sampleReport, visualRegions: null })).not.toContain('Visual regions');
+  });
+});
+
 describe('AC-L6 renderScoreboard()', () => {
   const signals = { contract: 40, unit: 50, a11y: 100, responsive: 25, visual: null, judge: null };
   const rows: ScoreboardRow[] = [

@@ -16,13 +16,29 @@ import { memoryFs } from './io/fs';
 
 const sha = (text: string): string => createHash('sha256').update(text).digest('hex');
 
+/** Files locked since Phase 0: the harness source, the configs and the package files. */
+const CONFIG_AND_HARNESS = {
+  'eslint.config.js': 'export default [];',
+  'package-lock.json': '{"lockfileVersion":3}',
+  'package.json': '{"name":"widgt"}',
+  'review/src/__snapshots__/report.md': '# Report',
+  'review/src/score.ts': 'export const total = 0;',
+  'review/tsconfig.json': '{"include":["src"]}',
+  'tsconfig.app.json': '{"include":["src"]}',
+  'tsconfig.json': '{"files":[]}',
+  'tsconfig.node.json': '{"include":["vite.config.ts"]}',
+  'vite.config.ts': 'export default {};',
+};
+
 const tree = {
   'review/contract/widget.spec.ts': "test('AC-1.1 renders', () => {});",
   'review/contract/helpers/viewports.ts': 'export const widths = [320, 768, 1280];',
   'review/reference/widget-reference.png': new Uint8Array([137, 80, 78, 71]),
   'review/rubric.json': '{"criteria":[]}',
-  'review/src/score.ts': 'not locked',
+  'review/playwright.config.ts': 'export default {};',
+  ...CONFIG_AND_HARNESS,
   'src/App.tsx': 'not locked',
+  'src/main.tsx': 'not locked',
 };
 
 function lockedTree(overrides: Record<string, string | Uint8Array | undefined> = {}): Record<string, string | Uint8Array> {
@@ -35,13 +51,24 @@ function lockedTree(overrides: Record<string, string | Uint8Array | undefined> =
 }
 
 describe('AC-L3 contract lock (G4)', () => {
-  it('AC-L3 hashes contract, reference and rubric files, sorted by path', () => {
+  it('AC-L3 hashes the contract, reference, rubric, configs, package files and harness source, sorted by path', () => {
     const lock = computeLock(memoryFs(tree));
     expect(Object.keys(lock)).toEqual([
+      'eslint.config.js',
+      'package-lock.json',
+      'package.json',
       'review/contract/helpers/viewports.ts',
       'review/contract/widget.spec.ts',
+      'review/playwright.config.ts',
       'review/reference/widget-reference.png',
       'review/rubric.json',
+      'review/src/__snapshots__/report.md',
+      'review/src/score.ts',
+      'review/tsconfig.json',
+      'tsconfig.app.json',
+      'tsconfig.json',
+      'tsconfig.node.json',
+      'vite.config.ts',
     ]);
     expect(lock['review/rubric.json']).toBe(sha('{"criteria":[]}'));
   });
@@ -57,8 +84,20 @@ describe('AC-L3 contract lock (G4)', () => {
   });
 
   it('AC-L3 ignores changes outside the locked scope', () => {
-    const gate = checkContractLock(memoryFs(lockedTree({ 'src/App.tsx': 'changed', 'review/src/score.ts': 'changed' })));
+    const gate = checkContractLock(memoryFs(lockedTree({ 'src/App.tsx': 'changed', 'src/main.tsx': 'changed' })));
     expect(gate.passed).toBe(true);
+  });
+
+  it.each(Object.keys(CONFIG_AND_HARNESS))('AC-L3 fails when %s is changed', (path) => {
+    const gate = checkContractLock(memoryFs(lockedTree({ [path]: 'changed' })));
+    expect(gate.passed).toBe(false);
+    expect(gate.detail).toContain(`changed: ${path}`);
+  });
+
+  it('AC-L3 fails when a harness source file is added', () => {
+    const gate = checkContractLock(memoryFs(lockedTree({ 'review/src/signals/extra.ts': 'export {};' })));
+    expect(gate.passed).toBe(false);
+    expect(gate.detail).toContain('added: review/src/signals/extra.ts');
   });
 
   it.each([
@@ -71,6 +110,21 @@ describe('AC-L3 contract lock (G4)', () => {
     const gate = checkContractLock(memoryFs(lockedTree(change)));
     expect(gate.passed).toBe(false);
     expect(gate.detail).toContain(detail);
+  });
+
+  it.each(['review/contract/.DS_Store', 'review/reference/Thumbs.db', 'review/src/signals/.DS_Store'])(
+    'AC-L3 ignores the OS junk file %s inside a locked folder',
+    (junk) => {
+      const gate = checkContractLock(memoryFs(lockedTree({ [junk]: new Uint8Array([0, 0, 0, 1]) })));
+      expect(gate).toMatchObject({ passed: true });
+      expect(Object.keys(computeLock(memoryFs({ ...tree, [junk]: 'junk' })))).not.toContain(junk);
+    },
+  );
+
+  it('AC-L3 still locks other dotfiles inside a locked folder', () => {
+    const gate = checkContractLock(memoryFs(lockedTree({ 'review/contract/.hidden.ts': 'export {};' })));
+    expect(gate.passed).toBe(false);
+    expect(gate.detail).toContain('added: review/contract/.hidden.ts');
   });
 
   it('AC-L3 fails with a clear message when the lock file is missing', () => {

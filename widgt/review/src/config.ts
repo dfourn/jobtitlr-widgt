@@ -17,10 +17,10 @@ export interface ReviewPaths {
   readonly contractResults: string;
   /** Written by `vitest run --reporter=json`. */
   readonly vitestResults: string;
-  /** Optional; written by the contract tests when they record axe counts. */
-  readonly axeResults: string;
+  /** Folder of `<state>.json` axe results, one per state, written by the AC-3.6 contract tests. */
+  readonly axeDir: string;
   readonly screenshotsDir: string;
-  /** The `?visual=1` screenshot at 401px, compared with the reference. */
+  /** The widget alone in `?visual=1` (360px wrapper), compared with the reference card. */
   readonly visualScreenshot: string;
   readonly reference: string;
   readonly diff: string;
@@ -30,8 +30,12 @@ export interface ReviewPaths {
   readonly spec: string;
 }
 
-/** The screenshots the contract tests take, by file name. */
-export const SCREENSHOT_NAMES = ['visual-401', 'viewport-320', 'viewport-768', 'viewport-1280'] as const;
+/**
+ * The screenshots the contract tests take, by file name (see
+ * review/contract/visual.spec.ts): the 401px frame, the widget alone, and the
+ * full page at each viewport width.
+ */
+export const SCREENSHOT_NAMES = ['visual-401', 'visual-widget', 'page-320', 'page-768', 'page-1280'] as const;
 
 /** Default paths of spec 03 §4. */
 export function defaultPaths(latestDir = 'review/runs/latest'): ReviewPaths {
@@ -40,9 +44,9 @@ export function defaultPaths(latestDir = 'review/runs/latest'): ReviewPaths {
     latestDir,
     contractResults: `${latestDir}/contract-results.json`,
     vitestResults: `${latestDir}/vitest-results.json`,
-    axeResults: `${latestDir}/axe.json`,
+    axeDir: `${latestDir}/axe`,
     screenshotsDir: `${latestDir}/screenshots`,
-    visualScreenshot: `${latestDir}/screenshots/visual-401.png`,
+    visualScreenshot: `${latestDir}/screenshots/visual-widget.png`,
     reference: 'review/reference/widget-reference.png',
     diff: `${latestDir}/diff.png`,
     lockFile: DEFAULT_LOCK_FILE,

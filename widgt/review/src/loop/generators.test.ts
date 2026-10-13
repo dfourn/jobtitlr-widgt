@@ -29,12 +29,24 @@ describe('AC-L7 Claude CLI generator', () => {
     expect(calls[0]?.args).not.toContain('THE PROMPT');
   });
 
-  it('AC-L7 accepts edits, denies prompts, keeps review/ off limits and passes the remaining budget', () => {
+  it('AC-L7 denies prompts, keeps review/ off limits and passes the remaining budget', () => {
     const args = new ClaudeCliGenerator(runnerReturning(0, '').runner, { name: 'claude' }).args(context);
-    expect(args.slice(0, 7)).toEqual(['-p', '--output-format', 'json', '--permission-mode', 'acceptEdits', '--permission-prompts', 'none']);
+    expect(args.slice(0, 7)).toEqual(['-p', '--output-format', 'json', '--permission-mode', 'dontAsk', '--permission-prompts', 'none']);
     const disallowed = args.slice(args.indexOf('--disallowedTools') + 1);
     expect(disallowed).toEqual(expect.arrayContaining(['Edit(review/**)', 'Write(review/**)', 'Read(review/runs/**)', 'Bash(git *)']));
     expect(args).toEqual(expect.arrayContaining(['--max-budget-usd', '7.50']));
+  });
+
+  it('AC-L13 lets the generator write only src/ and index.html, and denies node_modules and .npmrc', () => {
+    const args = new ClaudeCliGenerator(runnerReturning(0, '').runner, { name: 'claude' }).args(context);
+    expect(args.slice(3, 5)).toEqual(['--permission-mode', 'dontAsk']);
+    const allowed = args.slice(args.indexOf('--allowedTools') + 1, args.indexOf('--disallowedTools'));
+    expect(allowed).toEqual(expect.arrayContaining(['Edit(src/**)', 'Write(src/**)', 'Edit(index.html)', 'Write(index.html)']));
+    expect(allowed.filter((tool) => /^(Edit|Write)(\(|$)/.test(tool) && !/^(Edit|Write)\((src\/\*\*|index\.html)\)$/.test(tool))).toEqual([]);
+    const disallowed = args.slice(args.indexOf('--disallowedTools') + 1);
+    expect(disallowed).toEqual(
+      expect.arrayContaining(['Edit(node_modules/**)', 'Write(node_modules/**)', 'Edit(.npmrc)', 'Write(.npmrc)']),
+    );
   });
 
   it('AC-L7 leaves out the budget flag when there is no budget', () => {
@@ -69,6 +81,12 @@ describe('AC-L7 external generator', () => {
     expect(outcome).toEqual({ kind: 'handoff' });
     expect(printed.join('\n')).toContain('review/runs/iter-03/prompt.md');
     expect(printed.join('\n')).toContain('npm run loop -- --generator external --resume');
+  });
+
+  it('AC-L12 the hand-off runs the guard with plain Node before resuming', async () => {
+    const printed: string[] = [];
+    await new ExternalGenerator((line) => printed.push(line)).generate('p', context);
+    expect(printed.join('\n')).toContain('node review/src/guard.ts && npm run loop -- --generator external --resume');
   });
 
   it('AC-L7 is selected with --generator external and needs no runner calls', async () => {

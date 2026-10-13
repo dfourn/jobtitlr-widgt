@@ -4,6 +4,9 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 
+const DOMAIN_REACT_MESSAGE =
+  'src/domain must stay framework-free (AC-7.3): put React code in src/components.';
+
 export default tseslint.config(
   { ignores: ['dist', 'coverage', 'playwright-report', 'test-results', 'review/runs'] },
   {
@@ -16,6 +19,38 @@ export default tseslint.config(
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
+    },
+  },
+  {
+    // AC-7.3: the domain is plain TypeScript, so it can be tested and reused without React or Vite.
+    files: ['src/domain/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            { name: 'react', message: DOMAIN_REACT_MESSAGE },
+            { name: 'react-dom', message: DOMAIN_REACT_MESSAGE },
+          ],
+          patterns: [
+            { group: ['react/*', 'react-dom/*'], message: DOMAIN_REACT_MESSAGE },
+          ],
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'MetaProperty',
+          message:
+            'src/domain must stay framework-free (AC-7.3): import.meta ties it to Vite or the module system. Pass the value in from the caller instead.',
+        },
+        {
+          // no-restricted-imports only sees static imports, and a computed name cannot be checked at all.
+          selector: 'ImportExpression',
+          message:
+            'src/domain must stay framework-free (AC-7.3): it needs no dynamic import(), which could load React or Vite code. Use a static import.',
+        },
+      ],
     },
   },
   {

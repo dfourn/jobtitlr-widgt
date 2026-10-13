@@ -1,5 +1,5 @@
 import { pad2, TOP_FAILURES, type GateReport, type ReviewReport } from '../report';
-import { SIGNAL_KEYS, type Failure, type SignalKey } from '../types';
+import { SIGNAL_KEYS, type Failure, type RegionDiagnostic, type SignalKey } from '../types';
 import { buildPrompt } from './prompt';
 import { shouldStop, type StopOptions, type StopReason } from './stop';
 
@@ -15,8 +15,15 @@ export interface IterationRecord {
   readonly sha: string | null;
   readonly summary: string;
   readonly costUsd: number | null;
-  /** Feedback for the next prompt: failed gates and the top failures. Never judge output. */
-  readonly feedback: { readonly gates: readonly GateReport[]; readonly failures: readonly Failure[] };
+  /**
+   * Feedback for the next prompt: failed gates, the top failures and the visual
+   * region diagnostics (absent in loop states saved before AC-L10). Never judge output.
+   */
+  readonly feedback: {
+    readonly gates: readonly GateReport[];
+    readonly failures: readonly Failure[];
+    readonly visualRegions?: readonly RegionDiagnostic[] | null;
+  };
 }
 
 /** `review/runs/loop-state.json`: lets `--resume` continue after an external generator. */
@@ -53,6 +60,11 @@ export interface LoopDeps {
   readonly generator: Generator;
   /** The text of spec 02. */
   readonly spec: string;
+  /**
+   * Checks the workspace before a review (AC-L12: `node review/src/guard.ts`, outside npm).
+   * Rejects when it refuses, which stops the loop before anything is reviewed or committed.
+   */
+  guard(): Promise<void>;
   /** Runs `npm run review` for an iteration and returns its report. */
   review(iteration: number): Promise<ReviewReport>;
   /** Copies runs/latest to runs/iter-NN. */
@@ -93,7 +105,8 @@ export async function runLoop(deps: LoopDeps, options: LoopOptions, initial: Loo
   let state = initial;
 
   const reviewAndCommit = async (iteration: number, summary: string, costUsd: number | null): Promise<void> => {
-    deps.log(`review: iteration ${pad2(iteration)}`);
+    deps.log(`guard and review: iteration ${pad2(iteration)}`);
+    await deps.guard();
     const report = await deps.review(iteration);
     await deps.archive(iteration);
     const record = toRecord(report, iteration, summary, costUsd);
@@ -129,6 +142,7 @@ export async function runLoop(deps: LoopDeps, options: LoopOptions, initial: Loo
       lastTotal: last.total,
       failedGates: last.feedback.gates,
       failures: last.feedback.failures,
+      visualRegions: last.feedback.visualRegions ?? null,
     });
     const promptPath = await deps.writePrompt(iteration, prompt);
     const remainingBudgetUsd = options.maxBudgetUsd === null ? null : Math.max(0, options.maxBudgetUsd - state.spentUsd);
@@ -165,6 +179,7 @@ function toRecord(report: ReviewReport, iteration: number, summary: string, cost
     feedback: {
       gates: report.gates.filter((gate) => !gate.passed),
       failures: report.failures.slice(0, TOP_FAILURES),
+      visualRegions: report.visualRegions,
     },
   };
 }

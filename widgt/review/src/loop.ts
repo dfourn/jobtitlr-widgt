@@ -91,6 +91,13 @@ function nodeDeps(runner: CommandRunner, judge: Judge, kind: GeneratorKind, path
       console.log(text);
     }),
     spec: readFileSync(abs(WIDGT_ROOT, paths.spec), 'utf8'),
+    guard: async () => {
+      // Plain Node, not npm and not tsx: see review/src/guard.ts (AC-L12).
+      const run = await runner.run(process.execPath, ['review/src/guard.ts']);
+      if (run.code !== 0) {
+        throw new Error(`the workspace guard refused to review (exit ${String(run.code)}):\n${run.stderr.trim()}`);
+      }
+    },
     review: (iteration) =>
       runReview(
         { root: WIDGT_ROOT, fs, runner, judge, now: () => new Date(), log },

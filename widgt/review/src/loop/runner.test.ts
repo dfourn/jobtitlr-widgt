@@ -38,6 +38,8 @@ interface Harness {
   readonly published: LoopState[];
   readonly saved: LoopState[];
   readonly generated: { iteration: number; remaining: number | null }[];
+  /** `guard` and `review N`, in the order the loop called them. */
+  readonly events: string[];
 }
 
 /** Fake world: reviews return scripted totals, the generator returns scripted outcomes. */
@@ -48,6 +50,7 @@ function harness(totals: readonly number[], outcomes: (iteration: number) => Gen
   const published: LoopState[] = [];
   const saved: LoopState[] = [];
   const generated: { iteration: number; remaining: number | null }[] = [];
+  const events: string[] = [];
   const generator: Generator = {
     name: 'fake',
     generate: (_prompt, context) => {
@@ -58,7 +61,12 @@ function harness(totals: readonly number[], outcomes: (iteration: number) => Gen
   const deps: LoopDeps = {
     generator,
     spec: 'SPEC 02 TEXT',
+    guard: () => {
+      events.push('guard');
+      return Promise.resolve();
+    },
     review: (iteration) => {
+      events.push(`review ${String(iteration)}`);
       const total = totals[iteration];
       return total === undefined ? Promise.reject(new Error(`no scripted total for ${String(iteration)}`)) : Promise.resolve(reportWith(total, iteration));
     },
@@ -85,8 +93,23 @@ function harness(totals: readonly number[], outcomes: (iteration: number) => Gen
     describeChanges: () => Promise.resolve('3 files changed'),
     log: () => undefined,
   };
-  return { deps, prompts, commits, archived, published, saved, generated };
+  return { deps, prompts, commits, archived, published, saved, generated, events };
 }
+
+describe('AC-L12 the loop guards the workspace', () => {
+  it('AC-L12 runs the guard before every review', async () => {
+    const h = harness([40, 70, 92]);
+    await runLoop(h.deps, options, initialState('fake'));
+    expect(h.events).toEqual(['guard', 'review 0', 'guard', 'review 1', 'guard', 'review 2']);
+  });
+
+  it('AC-L12 stops with the guard error and reviews and commits nothing when the guard refuses', async () => {
+    const h = harness([40, 70, 92]);
+    const deps: LoopDeps = { ...h.deps, guard: () => Promise.reject(new Error('guard: .npmrc is not allowed')) };
+    await expect(runLoop(deps, options, initialState('fake'))).rejects.toThrow('guard: .npmrc is not allowed');
+    expect([h.events, h.commits]).toEqual([[], []]);
+  });
+});
 
 describe('AC-L5 the loop stops on each stop condition', () => {
   it('AC-L5 stops when the target is reached with gates passing', async () => {
@@ -172,6 +195,14 @@ describe('AC-L7 prompts and the external generator', () => {
     expect(h.prompts.get(1)).toContain('[AC-1.1]');
     expect(h.prompts.get(2)).toContain('[AC-1.2]');
     expect(h.prompts.get(2)).toContain('Last score: 70 / 100');
+  });
+
+  it('AC-L10 carries the visual region hint from the last review into the next prompt', async () => {
+    const h = harness([40, 92]);
+    const regions = [{ name: 'stars', similarity: 0.4, best: { dx: 0, dy: 4, similarity: 0.9 } }];
+    const deps: LoopDeps = { ...h.deps, review: (iteration) => h.deps.review(iteration).then((report) => ({ ...report, visualRegions: regions })) };
+    await runLoop(deps, options, initialState('fake'));
+    expect(h.prompts.get(1)).toContain("Visual: the weakest region is 'stars' (0.40)");
   });
 
   it('AC-L7 hands off to an external agent and resumes where it left off', async () => {

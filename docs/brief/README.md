@@ -46,3 +46,4 @@ Below is a transcription of the key requirements, so specs and tests can refer t
 - **Data**: total = 952+171+55+14+40 = **1232**. Weighted mean = 5677/1232 = **4.608, shown as 4.6**, so the data is internally consistent.
 - **Bar widths are each rating's share of the total, not of the largest count.** The 952 bar fills about 77% of the track, and 952/1232 = 77.3%. The 171 bar fills about 13.6%, and 171/1232 = 13.9%.
 - **The 5th star is about 60% filled**, so it is a partial fill proportional to the score, not a rounded half star.
+- **The card** is a 360x405 box at (20, 16) in the 401x443 image: a 1px border `#d4d4d4` at x 20-379 and y 16-420, white outside it. The harness compares the widget with this crop (spec 03, section 3).

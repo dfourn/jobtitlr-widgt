@@ -4,7 +4,55 @@
  * Everything here is derived from the spec, never from an implementation.
  * The DOM hooks the components must expose are listed in `README.md`.
  */
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, type Locator, type Page } from '@playwright/test';
+
+/**
+ * The folder this run writes into, absolute and ending in a path separator: `REVIEW_RUN_DIR`
+ * when it is set (the review harness passes it, spec 03 section 4), else `review/runs/latest/`.
+ * The JSON report, Playwright's output, the screenshots and the axe results all go under it.
+ */
+export const RUN_DIR = runDirFrom(process.env.REVIEW_RUN_DIR);
+
+function runDirFrom(fromEnv: string | undefined): string {
+  const dir =
+    fromEnv === undefined || fromEnv.trim() === ''
+      ? fileURLToPath(new URL('../runs/latest/', import.meta.url))
+      : resolve(fromEnv);
+  return dir.endsWith(sep) ? dir : `${dir}${sep}`;
+}
+
+/** The states the AC-3.6 tests run axe in; each writes `<RUN_DIR>/axe/<state>.json`. */
+export type AxeState = 'default' | 'static' | 'selected';
+
+/** The parts of an axe-core violation the harness reads (spec 03, accessibility signal). */
+export interface AxeViolationLike {
+  readonly id: string;
+  readonly impact?: string | null | undefined;
+  readonly nodes: readonly unknown[];
+}
+
+/**
+ * Writes one state's axe result to `<RUN_DIR>/axe/<state>.json` as
+ * `{ state, violations: [{ id, impact, nodes }] }`, where `nodes` is the number of failing nodes.
+ * One file per state, so parallel workers never write the same file. Called after axe runs and
+ * before the test asserts, so a state that rendered always leaves a result, pass or fail.
+ */
+export function writeAxeState(state: AxeState, violations: readonly AxeViolationLike[]): void {
+  const dir = `${RUN_DIR}axe`;
+  mkdirSync(dir, { recursive: true });
+  const result = {
+    state,
+    violations: violations.map((violation) => ({
+      id: violation.id,
+      impact: violation.impact ?? null,
+      nodes: violation.nodes.length,
+    })),
+  };
+  writeFileSync(`${dir}${sep}${state}.json`, `${JSON.stringify(result, null, 2)}\n`);
+}
 
 /** Demo page scenarios (spec 02, section 8). */
 export const URLS = {

@@ -1,6 +1,16 @@
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { abs, type ReviewPaths, SCREENSHOT_NAMES } from './config';
-import { checkContractLock, checkForbiddenPatterns, checkTestCount, runCommandGates } from './gates';
+import {
+  checkContractLock,
+  checkForbiddenPatterns,
+  checkTestCount,
+  computeLock,
+  lockChangesSince,
+  runCommandGates,
+  withChangesDuringReview,
+  withForbiddenFiles,
+} from './gates';
+import { forbiddenFilesIn, type ForbiddenFile } from './guard';
 import type { ReadonlyFs } from './io/fs';
 import type { CommandRunner } from './io/runner';
 import type { Judge, JudgeResult } from './judge/judge';
@@ -8,9 +18,10 @@ import { parseRubric } from './judge/rubric';
 import { field, numberOf, parseJson } from './json';
 import { rankFailures, renderReportMarkdown, type GateReport, type ReviewReport, type SignalReport } from './report';
 import { DEFAULT_WEIGHTS, score } from './score';
-import { a11ySignal, parseAxeFile } from './signals/axe';
+import { axeSignal, readAxeStates } from './signals/axe';
 import { contractSignal, parsePlaywrightReport, responsiveSignal } from './signals/contract';
 import { acCoverage } from './signals/coverage';
+import { requirePresence, widgetCapture, widgetPresence } from './signals/presence';
 import { parseVitestReport, unitPassRate } from './signals/unit';
 import { collectVisual } from './signals/visual';
 import { GATE_IDS, SIGNAL_KEYS, type SignalKey, type Signals } from './types';
@@ -40,7 +51,7 @@ export interface ReviewOptions {
  * signals in the report; only a bug in the harness itself throws.
  */
 export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promise<ReviewReport> {
-  const { root, fs, runner, log } = deps;
+  const { root, fs, log } = deps;
   const paths = options.paths;
   const notes: string[] = [];
   const previousCount = options.baselineReport === null ? null : readTestCount(fs, options.baselineReport);
@@ -48,45 +59,61 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
   rmSync(abs(root, paths.latestDir), { recursive: true, force: true });
   mkdirSync(abs(root, paths.screenshotsDir), { recursive: true });
 
+  // Hashed now and again at the end: G4 must also see changes made while the review runs.
+  const lockedAtStart = computeLock(fs);
+  const lockGateAtStart = checkContractLock(fs, paths.lockFile);
+  const patternGate = checkForbiddenPatterns(fs);
+  // AC-L12: with such a file, any npm or Node command could run code that is not the widget's, so none runs.
+  const forbiddenAtStart = forbiddenFilesIn((name) => fs.exists(name));
+  const runner = forbiddenAtStart.length === 0 ? deps.runner : REFUSING_RUNNER;
+  if (forbiddenAtStart.length > 0) notes.push(`no command ran: ${forbiddenAtStart.map((file) => file.name).join(', ')} (AC-L12)`);
+
   log('gates: typecheck, lint, build');
   const commandGates = await runCommandGates(runner);
-  const lockGate = checkContractLock(fs, paths.lockFile);
-  const patternGate = checkForbiddenPatterns(fs);
 
-  log('unit and component tests (vitest)');
-  await runner.run('npx', ['--no-install', 'vitest', 'run', '--reporter=json', `--outputFile=${abs(root, paths.vitestResults)}`]);
-
+  // Vitest runs generator-owned tests in Node, which can write files. So the contract tests run,
+  // and everything that reads their outputs (signals, judge) finishes, before any unit test runs.
   log('contract tests (npm run test:e2e)');
   const e2e = await runner.run('npm', ['run', 'test:e2e'], { env: { REVIEW_RUN_DIR: abs(root, paths.latestDir) } });
   if (/missing script/i.test(`${e2e.stdout}\n${e2e.stderr}`)) {
     notes.push('npm run test:e2e is not defined yet, so no contract tests ran');
   }
 
-  log('collecting signals');
+  log('collecting contract signals');
   const contractResults = readJson(fs, paths.contractResults, (json) => parsePlaywrightReport(json, root));
   const contract = contractSignal(contractResults, paths.contractResults);
-  const unitResults = readJson(fs, paths.vitestResults, (json) => parseVitestReport(json, root));
-  const unitRate = unitPassRate(unitResults);
-  const coverage = acCoverage(fs, paths.spec);
-  const axe = readJson(fs, paths.axeResults, parseAxeFile);
-  const a11y = a11ySignal(axe, contractResults);
-  const responsive = responsiveSignal(contractResults);
+  // AC-L8: a11y, responsive and visual score 0 unless the widget rendered.
+  const presence = widgetPresence(contractResults);
+  const a11y = requirePresence(presence, axeSignal(readAxeStates(fs, paths.axeDir), paths.axeDir));
+  const responsive = requirePresence(presence, responsiveSignal(contractResults));
+  // AC-L10: the widget screenshot counts only when the AC-6.3 capture test, with its anti-cheat checks, passed.
+  const captured = widgetCapture(contractResults);
+  const scoreable = presence.present ? captured : presence;
   const visualPaths = {
     screenshot: abs(root, paths.visualScreenshot),
     reference: abs(root, paths.reference),
     diff: abs(root, paths.diff),
   };
-  const visual = collectVisual(visualPaths, root);
-  notes.push(...visual.notes);
-  if (axe === null && fs.exists(paths.axeResults)) {
-    notes.push(`${paths.axeResults} has an unrecognised shape`);
-  }
+  const collected = scoreable.present ? collectVisual(visualPaths, root) : null;
+  notes.push(...(collected?.notes ?? []));
+  const visual = requirePresence(scoreable, collected ?? { value: null, detail: 'not collected' });
 
-  const judged = await runJudge(deps, paths);
+  const judged = forbiddenAtStart.length === 0 ? await runJudge(deps, paths) : null;
   if (judged !== null) {
     writeFileSync(abs(root, `${paths.latestDir}/judge.json`), `${JSON.stringify(judged, null, 2)}\n`);
     notes.push(...judged.errors.map((error) => `judge ${deps.judge.name}: ${error}`));
   }
+
+  log('unit and component tests (vitest)');
+  await runner.run('npx', ['--no-install', 'vitest', 'run', '--reporter=json', `--outputFile=${abs(root, paths.vitestResults)}`]);
+  const unitResults = readJson(fs, paths.vitestResults, (json) => parseVitestReport(json, root));
+  const unitRate = unitPassRate(unitResults);
+  const coverage = acCoverage(fs, paths.spec, unitResults);
+  const forbidden = unionByName(forbiddenAtStart, forbiddenFilesIn((name) => fs.exists(name)));
+  const lockGate = withForbiddenFiles(
+    withChangesDuringReview(lockGateAtStart, lockChangesSince(fs, lockedAtStart)),
+    forbidden,
+  );
 
   const unitValue =
     unitRate.value === null && coverage.value === null ? null : ((unitRate.value ?? 0) + (coverage.value ?? 0)) / 2;
@@ -137,12 +164,22 @@ export async function runReview(deps: ReviewDeps, options: ReviewOptions): Promi
     testCount: unitRate.testCount,
     contract: contractResults === null ? null : { passed: contract.passed, total: contract.total },
     judgeScores: judged === null || judged.score === null ? null : judged.criteria,
+    visualRegions: collected?.regions ?? null,
     failures: rankFailures([...contract.failures, ...unitRate.failures]),
     notes,
   };
   writeFileSync(abs(root, `${paths.latestDir}/report.json`), `${JSON.stringify(report, null, 2)}\n`);
   writeFileSync(abs(root, `${paths.latestDir}/report.md`), renderReportMarkdown(report));
   return report;
+}
+
+/** Stands in for the real runner when the workspace has forbidden files: runs nothing, fails everything. */
+const REFUSING_RUNNER: CommandRunner = {
+  run: () => Promise.resolve({ code: 1, stdout: '', stderr: 'not run: the workspace has forbidden files (AC-L12)' }),
+};
+
+function unionByName(a: readonly ForbiddenFile[], b: readonly ForbiddenFile[]): ForbiddenFile[] {
+  return [...a, ...b.filter((file) => !a.some((other) => other.name === file.name))];
 }
 
 async function runJudge(deps: ReviewDeps, paths: ReviewPaths): Promise<JudgeResult | null> {

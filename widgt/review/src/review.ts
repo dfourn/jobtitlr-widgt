@@ -3,7 +3,7 @@
  * (spec 03 §2, AC-L1). Needs no AI: the judge is off unless --judge is given.
  *
  *   npm run review -- [--judge none|claude|glm] [--strict] [--baseline <report.json>]
- *                     [--contract-results <path>] [--axe <path>] [--screenshot <path>]
+ *                     [--contract-results <path>] [--axe <dir>] [--screenshot <path>]
  *                     [--reference <path>] [--spec <path>]
  *
  * Paths are relative to widgt/. --strict exits with 1 when a gate fails.
