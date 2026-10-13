@@ -3,6 +3,7 @@ package dev.jobtitlr;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -85,5 +86,24 @@ class NormaliserConfigurationTest {
     void acceptsBoundaryMinimumQuality(String id, double minimumQuality) {
         Normaliser normaliser = new Normaliser(List.of("Architect"), new TokenDiceScorer(), minimumQuality);
         assertEquals("Architect", normaliser.normalise("Architect"));
+    }
+
+    @Test
+    @DisplayName("AC-8.6 changing the caller's list after construction has no effect")
+    void changingCallersListHasNoEffect() {
+        List<String> titles = new ArrayList<>(List.of("Architect", "Accountant"));
+        Normaliser normaliser = new Normaliser(titles, new TokenDiceScorer(), 0.2);
+        titles.set(0, "Baker");
+        titles.remove("Accountant");
+        assertEquals("Accountant", normaliser.normalise("Acountant"));
+        assertEquals(List.of("Architect", "Accountant"), normaliser.normalisedTitles());
+    }
+
+    @Test
+    @DisplayName("AC-8.6 normalisedTitles() cannot be modified")
+    void normalisedTitlesCannotBeModified() {
+        Normaliser normaliser = new Normaliser(List.of("Architect", "Accountant"), new TokenDiceScorer(), 0.2);
+        assertThrows(UnsupportedOperationException.class, () -> normaliser.normalisedTitles().set(0, "Baker"));
+        assertThrows(UnsupportedOperationException.class, () -> normaliser.normalisedTitles().add("Baker"));
     }
 }
