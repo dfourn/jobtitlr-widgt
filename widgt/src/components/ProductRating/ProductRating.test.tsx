@@ -96,7 +96,7 @@ describe('ProductRating', () => {
     expect(widget).toHaveAttribute('data-testid', 'product-rating');
   });
 
-  it('AC-3.2 the star graphic is hidden and the logo is the only image', () => {
+  it('AC-3.2 the star graphic is hidden from assistive technology and the logo is the only image', () => {
     renderWidget();
     expect(screen.getAllByRole('img')).toHaveLength(1);
     for (const position of [1, 2, 3, 4, 5]) {
