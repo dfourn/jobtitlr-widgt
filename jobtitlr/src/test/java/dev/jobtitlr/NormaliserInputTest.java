@@ -2,6 +2,7 @@ package dev.jobtitlr;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 
@@ -80,5 +81,13 @@ class NormaliserInputTest {
         IllegalArgumentException fromBestMatch = assertThrows(IllegalArgumentException.class,
                 () -> normaliser.bestMatch(jobTitle));
         assertEquals("jobTitle must not be blank", fromBestMatch.getMessage());
+    }
+
+    @Test
+    @DisplayName("AC-7.3 punctuation-only input is no match, not an exception")
+    void punctuationOnlyInputIsNoMatch() {
+        Normaliser normaliser = new Normaliser();
+        assertTrue(normaliser.bestMatch("!!!").isEmpty());
+        assertEquals("!!!", normaliser.normalise("!!!"));
     }
 }
