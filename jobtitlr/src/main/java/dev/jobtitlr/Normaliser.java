@@ -1,8 +1,11 @@
 package dev.jobtitlr;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Matches a free-text job title to the closest title from a configured list
@@ -31,7 +34,8 @@ public final class Normaliser {
      * @param scorer the strategy that scores an input against a candidate title
      * @param minimumQuality the quality a match must reach to be accepted
      * @throws NullPointerException if titles, scorer or a title element is null
-     * @throws IllegalArgumentException if titles is empty or a title element is blank
+     * @throws IllegalArgumentException if titles is empty, a title element is blank
+     *         or two titles are equal ignoring case and surrounding whitespace
      */
     public Normaliser(List<String> titles, SimilarityScorer scorer, double minimumQuality) {
         Objects.requireNonNull(titles, "titles must not be null");
@@ -39,11 +43,16 @@ public final class Normaliser {
         if (titles.isEmpty()) {
             throw new IllegalArgumentException("titles must not be empty");
         }
+        Set<String> seen = new HashSet<>();
         for (int i = 0; i < titles.size(); i++) {
             String title = titles.get(i);
             Objects.requireNonNull(title, "titles[" + i + "] must not be null");
             if (title.isBlank()) {
                 throw new IllegalArgumentException("titles[" + i + "] must not be blank");
+            }
+            String key = title.strip().toLowerCase(Locale.ROOT);
+            if (!seen.add(key)) {
+                throw new IllegalArgumentException("duplicate title: \"" + key + "\"");
             }
         }
         this.titles = List.copyOf(titles);
