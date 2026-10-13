@@ -120,10 +120,10 @@ public final class Normaliser {
     /**
      * Returns the configured normalised titles.
      *
-     * @return an unmodifiable copy of the titles
+     * @return the titles, stored exactly as configured, in an unmodifiable list
      */
     public List<String> normalisedTitles() {
-        return List.of();
+        return titles;
     }
 
     /**
