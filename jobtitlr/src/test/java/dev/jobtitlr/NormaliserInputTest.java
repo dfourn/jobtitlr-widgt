@@ -64,4 +64,21 @@ class NormaliserInputTest {
                 () -> normaliser.bestMatch(null));
         assertEquals("jobTitle must not be null", fromBestMatch.getMessage());
     }
+
+    @ParameterizedTest(name = "{0} rejects the blank input ''{1}''")
+    @CsvSource({
+            "AC-7.2, ''",
+            "AC-7.2, '   '",
+            "AC-7.2, '\t\n'"
+    })
+    @DisplayName("AC-7.2 a blank input throws IllegalArgumentException from both methods")
+    void blankInputThrows(String id, String jobTitle) {
+        Normaliser normaliser = new Normaliser();
+        IllegalArgumentException fromNormalise = assertThrows(IllegalArgumentException.class,
+                () -> normaliser.normalise(jobTitle));
+        assertEquals("jobTitle must not be blank", fromNormalise.getMessage());
+        IllegalArgumentException fromBestMatch = assertThrows(IllegalArgumentException.class,
+                () -> normaliser.bestMatch(jobTitle));
+        assertEquals("jobTitle must not be blank", fromBestMatch.getMessage());
+    }
 }
