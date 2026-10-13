@@ -106,4 +106,19 @@ class NormaliserConfigurationTest {
         assertThrows(UnsupportedOperationException.class, () -> normaliser.normalisedTitles().set(0, "Baker"));
         assertThrows(UnsupportedOperationException.class, () -> normaliser.normalisedTitles().add("Baker"));
     }
+
+    @ParameterizedTest(name = "{0} rejects a scorer returning {1}")
+    @CsvSource({
+            "AC-8.7, -0.1",
+            "AC-8.7, 1.1",
+            "AC-8.7, NaN"
+    })
+    @DisplayName("AC-8.7 a scorer returning a value outside [0, 1] or NaN makes Normaliser throw IllegalStateException")
+    void scorerOutsideUnitIntervalThrowsIllegalState(String id, double quality) {
+        Normaliser normaliser = new Normaliser(List.of("Architect"), (input, candidate) -> quality, 0.2);
+        IllegalStateException exception = assertThrows(IllegalStateException.class,
+                () -> normaliser.bestMatch("Java engineer"));
+        assertEquals("scorer returned " + quality + " for \"Java engineer\" and \"Architect\""
+                + "; expected a value within [0, 1]", exception.getMessage());
+    }
 }
