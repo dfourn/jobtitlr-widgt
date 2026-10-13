@@ -34,8 +34,9 @@ public final class Normaliser {
      * @param scorer the strategy that scores an input against a candidate title
      * @param minimumQuality the quality a match must reach to be accepted
      * @throws NullPointerException if titles, scorer or a title element is null
-     * @throws IllegalArgumentException if titles is empty, a title element is blank
-     *         or two titles are equal ignoring case and surrounding whitespace
+     * @throws IllegalArgumentException if titles is empty, a title element is blank,
+     *         two titles are equal ignoring case and surrounding whitespace, or
+     *         minimumQuality is outside [0, 1] or NaN
      */
     public Normaliser(List<String> titles, SimilarityScorer scorer, double minimumQuality) {
         Objects.requireNonNull(titles, "titles must not be null");
@@ -54,6 +55,9 @@ public final class Normaliser {
             if (!seen.add(key)) {
                 throw new IllegalArgumentException("duplicate title: \"" + key + "\"");
             }
+        }
+        if (!(minimumQuality >= 0.0 && minimumQuality <= 1.0)) {
+            throw new IllegalArgumentException("minimumQuality must be within [0, 1]: " + minimumQuality);
         }
         this.titles = List.copyOf(titles);
         this.scorer = scorer;
