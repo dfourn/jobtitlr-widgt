@@ -25,6 +25,7 @@ This project was built with help from Claude (Anthropic), working in Cowork with
 | 2026-10-11 to 12 | Phase 0: implemented the plan test-first | Claude subagents, one at a time, in the main checkout | The branch has 61 commits, most of them by five implementers. Throwaway stub pages ran in a scratch worktree, and nothing from them was committed |
 | 2026-10-12 | Phase 0: adversarial review of the whole diff | Claude subagent (read-only) | 7 findings, all fixed test-first. Two were serious: an overlay outside the widget could fake the visual score, and a unit test could plant result files |
 | 2026-10-12 | Phase 0: second review of the whole branch before the relock, and the fixes | Claude Code | I asked for it before rewriting the lock. 5 findings, each checked by running it: a project `.npmrc` can load code into every npm script, a unit test could rewrite locked files after G4 had passed, and three ways to paint the reference into the screenshot got past every check. All fixed test-first, with a workspace guard that runs outside npm |
+| 2026-10-13 | Phase 0 close-out: relocked the contract (H0) and verified the gates | GLM orchestrator via Claude Code | I rewrote the lock myself after reviewing its 71-file scope. `npm run verify` then passed: typecheck, lint, 421 unit tests, all six gates, and the contract honestly red at 0/58 because no widget exists yet (review total 12.4/100) |
 
 ## How to spot AI-assisted commits
 Every commit made with AI help ends with a `Co-Authored-By: Claude ...` trailer.
