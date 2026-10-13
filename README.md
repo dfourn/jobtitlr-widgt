@@ -46,6 +46,7 @@ Of the 472 tests, 172 cover the widget itself (domain logic and components); the
 - Decisions: [`docs/decisions/`](docs/decisions/) — ADR 0001 (widgt styling approach) and ADR 0002 (jobtitlr matching algorithm).
 - Plans: [`docs/plans/`](docs/plans/) — the master plan and the per-phase plans and guides the work followed.
 - Assumptions: [`docs/ASSUMPTIONS.md`](docs/ASSUMPTIONS.md) — the recorded decisions behind default behaviour where the brief was silent.
+- Verification: [`docs/TESTING.md`](docs/TESTING.md) — a final fresh-clone run of every command, with the brief-to-test traceability.
 
 ## How AI was used
 
